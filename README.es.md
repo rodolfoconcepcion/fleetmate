@@ -122,14 +122,14 @@ graph TD
 
 FleetMate está diseñado de forma nativa para la era de la programación agéntica. Si usas herramientas como **Google Antigravity**, **Claude Code**, **Cursor** o **Windsurf**, no tienes que ejecutar comandos ni certificados a mano.
 
-El repositorio incluye un Skill de IA pre-empaquetado: [](.agents/skills/fleetmate-deployer/SKILL.md).
+El repositorio incluye un Skill de IA pre-empaquetado: [`.agents/skills/fleetmate-deployer/SKILL.es.md`](.agents/skills/fleetmate-deployer/SKILL.es.md).
 
 **Solo abre el proyecto en tu agente de IA y escribe:**
 > *"Instala y configura FleetMate para mi Tesla (VIN: , Token: , Dominio: ). Ejecuta el skill de despliegue y verifica el estado."*
 
 El agente de IA detectará automáticamente tu entorno (VPS o Homelab local), generará los certificados mTLS con SANs válidos, emparejará tu vehículo en la API de Tesla, levantará los contenedores en Docker y comprobará las métricas en Prometheus.
 
-👉 Consulta la [Guía Completa de Despliegue con Agentes de IA](docs/AI_AGENT_SETUP.md).
+👉 Consulta la [Guía Completa de Despliegue con Agentes de IA](docs/AI_AGENT_SETUP.es.md).
 
 ---
 

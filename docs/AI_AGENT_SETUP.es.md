@@ -20,7 +20,7 @@ Simplemente abre el proyecto en tu asistente de IA y escribe:
 
 FleetMate incluye directivas agénticas pre-empaquetadas que le indican a cualquier IA cómo ejecutar cada paso de forma segura y sin interrupciones:
 
-* **`.agents/skills/fleetmate-deployer/SKILL.md`:** 
+* **`.agents/skills/fleetmate-deployer/SKILL.es.md`:** 
   El manual de instrucciones agéntico para Google Antigravity y entornos de ejecución autónoma.
 * **Integración nativa con `CLAUDE.md` / `AGENTS.md`:** 
   Incluye resolución automática de errores, aprovisionamiento de certificados sin pedir permisos manuales y validación segura del esquema PostgreSQL.
