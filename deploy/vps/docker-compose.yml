@@ -1,0 +1,79 @@
+services:
+  fleet-telemetry:
+    image: tesla/fleet-telemetry:latest
+    container_name: fleetmate-telemetry
+    restart: unless-stopped
+    ports:
+      - "4443:4443"
+      - "8095:8095"
+    volumes:
+      - ../../config/fleet-telemetry:/etc/fleet-telemetry:ro
+    environment:
+      - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    depends_on:
+      - mosquitto
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: fleetmate-mosquitto
+    restart: unless-stopped
+    # On a public VPS, keep MQTT internal to the Docker network for maximum security
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ../../config/mosquitto:/mosquitto/config
+
+  fleetmate-bridge:
+    image: ghcr.io/rodolfoconcepcion/fleetmate:latest
+    container_name: fleetmate-bridge
+    restart: unless-stopped
+    environment:
+      - FLEETMATE_MQTT_BROKER=mosquitto
+      - FLEETMATE_MQTT_PORT=1883
+      - FLEETMATE_POSTGRES_HOST=database
+      - FLEETMATE_POSTGRES_PORT=5432
+      - FLEETMATE_POSTGRES_USER=${FLEETMATE_DB_USER:-teslamate}
+      - FLEETMATE_POSTGRES_PASSWORD=${FLEETMATE_DB_PASS:-teslamate_secure_vps_pwd}
+      - FLEETMATE_POSTGRES_DB=${FLEETMATE_DB_NAME:-teslamate}
+      - FLEETMATE_CAR_ID=${FLEETMATE_CAR_ID:-1}
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - fleet-telemetry
+      - database
+
+  database:
+    image: postgres:16-alpine
+    container_name: fleetmate-database
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${FLEETMATE_DB_USER:-teslamate}
+      - POSTGRES_PASSWORD=${FLEETMATE_DB_PASS:-teslamate_secure_vps_pwd}
+      - POSTGRES_DB=${FLEETMATE_DB_NAME:-teslamate}
+    volumes:
+      - fleetmate-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U teslamate -d teslamate"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: teslamate/grafana:latest
+    container_name: fleetmate-grafana
+    restart: unless-stopped
+    environment:
+      - DATABASE_USER=${FLEETMATE_DB_USER:-teslamate}
+      - DATABASE_PASS=${FLEETMATE_DB_PASS:-teslamate_secure_vps_pwd}
+      - DATABASE_NAME=${FLEETMATE_DB_NAME:-teslamate}
+      - DATABASE_HOST=database
+    ports:
+      - "3100:3000"
+    volumes:
+      - fleetmate-grafana-data:/var/lib/grafana
+    depends_on:
+      - database
+
+volumes:
+  fleetmate-db:
+  fleetmate-grafana-data:
