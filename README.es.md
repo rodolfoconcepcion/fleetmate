@@ -149,6 +149,15 @@ El instalador automático se encarga de todo:
 
 ---
 
+### 🔍 Motor de Auto-Detección Inteligente (TeslaMate y Homelab Existentes)
+Si ya tienes **TeslaMate**, una base de datos **PostgreSQL** o un broker **MQTT Mosquitto** corriendo en tu máquina o Homelab:
+* El instalador **escanea automáticamente Docker** buscando contenedores activos (ej. `runtipi-teslamate-db`, `teslamate_database`, `mosquitto`).
+* Te preguntará automáticamente: `💡 Auto-Discovery Insight: ¿Vincular a la instalación existente de TeslaMate? [Y/n]`.
+* Al confirmar, FleetMate activa de inmediato el **Perfil Híbrido** (`docker-compose.hybrid.yml`), resuelve las IPs internas del bridge de Docker y empieza a inyectar la telemetría en tu base de datos actual.
+* **Cero duplicación:** NO levanta contenedores redundantes de PostgreSQL ni de Grafana.
+
+---
+
 ## 🛠️ Guía Rápida de Inicio (Listo en 3 Pasos)
 
 ### 1. Clona el repositorio

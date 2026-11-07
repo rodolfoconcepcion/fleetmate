@@ -1,0 +1,34 @@
+services:
+  fleet-telemetry:
+    image: tesla/fleet-telemetry:latest
+    container_name: fleetmate-telemetry
+    restart: unless-stopped
+    ports:
+      - "4443:4443"
+      - "8095:8095"
+    volumes:
+      - ./config/fleet-telemetry:/etc/fleet-telemetry:ro
+    environment:
+      - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+
+  fleetmate-bridge:
+    image: ghcr.io/rodolfoconcepcion/fleetmate:latest
+    container_name: fleetmate-bridge
+    restart: unless-stopped
+    environment:
+      - FLEETMATE_MQTT_BROKER=${FLEETMATE_MQTT_BROKER:-127.0.0.1}
+      - FLEETMATE_MQTT_PORT=${FLEETMATE_MQTT_PORT:-1883}
+      - FLEETMATE_MQTT_USERNAME=${FLEETMATE_MQTT_USERNAME:-}
+      - FLEETMATE_MQTT_PASSWORD=${FLEETMATE_MQTT_PASSWORD:-}
+      - FLEETMATE_POSTGRES_HOST=${FLEETMATE_POSTGRES_HOST:-127.0.0.1}
+      - FLEETMATE_POSTGRES_PORT=${FLEETMATE_POSTGRES_PORT:-5432}
+      - FLEETMATE_POSTGRES_USER=${FLEETMATE_POSTGRES_USER:-teslamate}
+      - FLEETMATE_POSTGRES_PASSWORD=${FLEETMATE_POSTGRES_PASSWORD:-teslamate_pwd_2026}
+      - FLEETMATE_POSTGRES_DB=${FLEETMATE_POSTGRES_DB:-teslamate}
+      - FLEETMATE_CAR_ID=${FLEETMATE_CAR_ID:-1}
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - fleet-telemetry
