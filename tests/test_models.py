@@ -16,6 +16,12 @@ def test_vehicle_telemetry_point_parsing():
         "Gear": "D",
         "OutsideTemp": 82.5,
         "InsideTemp": 72.0,
+        "TirePressureFrontLeft": 2.8,
+        "TirePressureFrontRight": 2.9,
+        "TirePressureRearLeft": 3.0,
+        "TirePressureRearRight": 3.1,
+        "RatedBatteryRange": 412.5,
+        "IsClimateOn": True,
     }
 
     point = VehicleTelemetryPoint.from_fleet_telemetry_json(
@@ -32,6 +38,12 @@ def test_vehicle_telemetry_point_parsing():
     assert point.battery_level == 78
     assert point.outside_temp == Decimal("82.5")
     assert point.inside_temp == Decimal("72.0")
+    assert point.tpms_pressure_fl == Decimal("2.8")
+    assert point.tpms_pressure_fr == Decimal("2.9")
+    assert point.tpms_pressure_rl == Decimal("3.0")
+    assert point.tpms_pressure_rr == Decimal("3.1")
+    assert point.rated_battery_range_km == Decimal("412.5")
+    assert point.is_climate_on is True
 
 
 def test_vehicle_telemetry_handles_missing_fields():
@@ -43,3 +55,5 @@ def test_vehicle_telemetry_handles_missing_fields():
     assert point.latitude is None
     assert point.longitude is None
     assert point.speed is None
+    assert point.tpms_pressure_fl is None
+    assert point.is_climate_on is None
