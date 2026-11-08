@@ -66,7 +66,14 @@ def test_changelog_version_parity():
 
 def test_language_switcher_navigation():
     """Ensure key root documents contain bilingual navigation links at the top."""
-    bilingual_docs = ["README", "CHANGELOG", "ROADMAP", "CONTRIBUTING", "SECURITY"]
+    bilingual_docs = [
+        "README",
+        "CHANGELOG",
+        "ROADMAP",
+        "CONTRIBUTING",
+        "SECURITY",
+        "CODE_OF_CONDUCT",
+    ]
     missing_switcher = []
 
     for name in bilingual_docs:
