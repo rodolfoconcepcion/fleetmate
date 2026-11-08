@@ -4,6 +4,21 @@
 
 ---
 
+## [0.3.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.2.0...fleetmate-v0.3.0) (2026-11-08)
+
+
+### Features
+
+* **scope:** declare TeslaMate deprecation and native independence as in-scope ([#18](https://github.com/rodolfoconcepcion/fleetmate/issues/18)) ([ebcef19](https://github.com/rodolfoconcepcion/fleetmate/commit/ebcef19b567e82c3570f29b094b9baf1509b141f))
+
+
+### Documentation
+
+* **changelog:** add Spanish changelog and bilingual navigation links ([c7102ca](https://github.com/rodolfoconcepcion/fleetmate/commit/c7102cab4839eedc5351ee342766ea66ba22236e))
+* **i18n:** complete Spanish translations for governance, contributors, and roadmap ([#12](https://github.com/rodolfoconcepcion/fleetmate/issues/12)) ([eaafe2c](https://github.com/rodolfoconcepcion/fleetmate/commit/eaafe2c3f90883cabc712dcc152da0caffc203c7))
+* **roadmap:** add automated multilingual documentation engine to Phase 3 and language switcher links ([e38eba4](https://github.com/rodolfoconcepcion/fleetmate/commit/e38eba47bc0bb942012d13f84cb13c5076ad4c4e))
+* **roadmap:** fix broken Open Source Guide best practices links ([d8f7afe](https://github.com/rodolfoconcepcion/fleetmate/commit/d8f7afe782e9050cfe1856150104deee0eadc880))
+
 ## [0.2.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.1.0...fleetmate-v0.2.0) (2026-11-08)
 
 
