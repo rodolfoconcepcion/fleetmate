@@ -56,8 +56,7 @@ async def main_async() -> None:
     # Cleanup
     logger.info("Cleaning up resources...")
     consumer_task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await consumer_task
+    await asyncio.gather(consumer_task, return_exceptions=True)
     await repo.close()
     logger.info("FleetMate Bridge shutdown complete.")
 
