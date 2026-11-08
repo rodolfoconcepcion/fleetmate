@@ -10,7 +10,15 @@ FleetMate es un motor de transmisión mTLS y puente de telemetría de alta veloc
 
 ## Código de Conducta
 
-Al participar en este proyecto, aceptas cumplir con nuestro [Código de Conducta](CODE_OF_CONDUCT.es.md). Puedes reportar comportamientos inaceptables de forma privada a través de [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories).
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:abf0aa05d43e0031feae45157676ec859900509efc21ab00b1a04760cb04e335 -->
+
+Al participar en este proyecto, aceptas cumplir con nuestro [Código de Conducta](CODE_OF_CONDUCT.es.md). Reporta el acoso u otros comportamientos inaceptables de forma privada mediante el [formulario de GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories/new) (requiere iniciar sesión en GitHub).
+
+Usa el título «Reporte del Código de Conducta» y describe el incidente, las fechas o enlaces relevantes y su impacto en la descripción. Este formulario también acepta reportes de conducta: no se requiere una vulnerabilidad de seguridad ni una prueba de concepto. Sustituye las indicaciones de la plantilla sobre vulnerabilidades por tu reporte; en los campos obligatorios que no correspondan, incluida la prueba de concepto, escribe «No aplica — reporte de conducta». Haz clic en **Submit report** para enviarlo de forma privada a los mantenedores del repositorio. No publiques detalles sensibles en issues o debates públicos.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 ---
 

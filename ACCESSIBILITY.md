@@ -41,7 +41,13 @@ FleetMate's primary interface is a command-line interface (CLI) and background d
 
 We welcome your feedback on the accessibility of FleetMate. If you encounter accessibility barriers, difficult-to-parse terminal output, or have suggestions for improvements:
 
-- **Discussions**: [GitHub Discussions](https://github.com/rodolfoconcepcion/fleetmate/discussions) (Category: `Ideas` or `General`)
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:d4623a03c410d35f2c8d9b0af104c544a7f7609f4975d051e03468bf95e906eb -->
+
+- **Discussions**: [GitHub Discussions](https://github.com/rodolfoconcepcion/fleetmate/discussions) (Category: `Ideas` or `General`). For private accessibility feedback, use the [GitHub Security Advisories reporting form](https://github.com/rodolfoconcepcion/fleetmate/security/advisories/new) (GitHub sign-in required). Use the title “Private accessibility report”, describe the barrier and its impact, and enter “Not applicable — accessibility report” for required vulnerability-specific fields, including proof of concept. No security vulnerability or proof of concept is required. Click **Submit report** to send it privately to the repository maintainers.
+
+<!-- /coderabbit-ai-generated:v1 -->
 - **GitHub Issues**: Open an issue on [GitHub Issues](https://github.com/rodolfoconcepcion/fleetmate/issues) detailing the barrier and the assistive technology used.
 
 We aim to respond to accessibility reports within 2 business days.
