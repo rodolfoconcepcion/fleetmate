@@ -50,6 +50,7 @@ def test_changelog_version_parity():
     en_versions = set(
         re.findall(r"^##\s+\[(.*?)\]", en_changelog.read_text(encoding="utf-8"), re.MULTILINE)
     )
+    assert en_versions, "No release versions found in primary CHANGELOG.md."
 
     for lang in SUPPORTED_LANGUAGES:
         lang_changelog = REPO_ROOT / f"CHANGELOG.{lang}.md"
@@ -72,15 +73,16 @@ def test_language_switcher_navigation():
         en_file = REPO_ROOT / f"{name}.md"
         es_file = REPO_ROOT / f"{name}.es.md"
 
-        if en_file.exists():
-            content = en_file.read_text(encoding="utf-8")[:1000]
-            if f"[Español]({name}.es.md)" not in content and "[Español]" not in content:
-                missing_switcher.append(str(en_file.relative_to(REPO_ROOT)))
+        assert en_file.exists(), f"{name}.md does not exist."
+        assert es_file.exists(), f"{name}.es.md does not exist."
 
-        if es_file.exists():
-            content = es_file.read_text(encoding="utf-8")[:1000]
-            if f"[English]({name}.md)" not in content and "[English]" not in content:
-                missing_switcher.append(str(es_file.relative_to(REPO_ROOT)))
+        content = en_file.read_text(encoding="utf-8")[:1000]
+        if f"[Español]({name}.es.md)" not in content:
+            missing_switcher.append(str(en_file.relative_to(REPO_ROOT)))
+
+        content = es_file.read_text(encoding="utf-8")[:1000]
+        if f"[English]({name}.md)" not in content:
+            missing_switcher.append(str(es_file.relative_to(REPO_ROOT)))
 
     assert not missing_switcher, "Documents missing language navigation links:\n" + "\n".join(
         f"  - {m}" for m in missing_switcher
