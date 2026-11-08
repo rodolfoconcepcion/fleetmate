@@ -4,6 +4,12 @@
 
 ---
 
+## [0.4.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.3.0...fleetmate-v0.4.0) (2026-11-08)
+
+### Características (Features)
+
+* **geocoding:** implementación del trabajador de geocodificación inversa con Nominatim para direcciones de trayectos ([#14](https://github.com/rodolfoconcepcion/fleetmate/issues/14)) ([b222a25](https://github.com/rodolfoconcepcion/fleetmate/commit/b222a255271e5dd44a4ae89c0397a28f22ab08bd))
+
 ## [0.3.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.2.0...fleetmate-v0.3.0) (2026-11-08)
 
 ### Características (Features)
