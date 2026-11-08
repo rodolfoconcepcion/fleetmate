@@ -1,5 +1,7 @@
 # Código de Conducta de Contributor Covenant
 
+[English](CODE_OF_CONDUCT.md) | [Español](CODE_OF_CONDUCT.es.md)
+
 ## Nuestro Compromiso
 
 Nosotros, como miembros, colaboradores y líderes, nos comprometemos a hacer que la participación en nuestra comunidad sea una experiencia libre de acoso para todos, independientemente de la edad, dimensión corporal, discapacidad visible o invisible, etnia, características sexuales, identidad y expresión de género, nivel de experiencia, educación, nivel socioeconómico, nacionalidad, apariencia personal, raza, casta, color, religión o identidad y orientación sexual.
