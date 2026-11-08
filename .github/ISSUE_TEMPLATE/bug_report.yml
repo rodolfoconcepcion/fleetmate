@@ -1,0 +1,48 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve FleetMate
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Please provide as much detail as possible to help reproduce the problem.
+  - type: input
+    id: vehicle
+    attributes:
+      label: Tesla Vehicle Model & MCU
+      description: e.g., 2024 Tesla Model 3 Highland (AMD Ryzen MCU3)
+      placeholder: e.g. Model 3 Highland (MCU3)
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Vehicle Firmware Version
+      description: e.g., 2024.44.25.2
+      placeholder: e.g. 2024.44.25.2
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment Environment
+      options:
+        - Standalone Docker Compose (included stack)
+        - Hybrid (External TeslaMate PostgreSQL / MQTT)
+        - Home Assistant / Add-on
+        - Bare Metal / Virtualenv
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Paste any error messages or docker logs here.
+      render: shell

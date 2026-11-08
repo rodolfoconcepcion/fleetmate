@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Questions & Community Support
+    url: https://github.com/rodolfoconcepcion/fleetmate/discussions
+    about: Ask questions and discuss features with the community.
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/rodolfoconcepcion/fleetmate/security/policy
+    about: Privately report a security vulnerability according to SECURITY.md.

@@ -42,6 +42,13 @@ dev = [
 [project.scripts]
 fleetmate = "fleetmate.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/rodolfoconcepcion/fleetmate"
+Documentation = "https://github.com/rodolfoconcepcion/fleetmate#readme"
+Repository = "https://github.com/rodolfoconcepcion/fleetmate.git"
+Issues = "https://github.com/rodolfoconcepcion/fleetmate/issues"
+Changelog = "https://github.com/rodolfoconcepcion/fleetmate/releases"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
