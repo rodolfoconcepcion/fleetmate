@@ -1,5 +1,7 @@
 # FleetMate Product Roadmap
 
+[English](ROADMAP.md) | [Español](ROADMAP.es.md)
+
 This document outlines the high-level roadmap and future vision for **FleetMate**, following the [Open Source Guide on Best Practices for Maintainers](https://opensource.guide/best-practices-for-maintainers/).
 
 ---
@@ -17,7 +19,7 @@ FleetMate aims to be the gold-standard, zero-cost, real-time streaming bridge be
 - [x] Tesla Fleet Telemetry mTLS termination & handshake engine.
 - [x] Direct PostgreSQL state repository matching TeslaMate schema.
 - [x] Home Assistant MQTT discovery with dynamic vehicle sensor entities.
-- [x] Bilingual documentation (English & Spanish).
+- [x] Initial bilingual documentation (English & Spanish).
 
 ### 🚀 Phase 2: Autodiscovery & Hardening (v0.2.0) — *Current*
 - [x] Automated discovery of existing TeslaMate, PostgreSQL, and MQTT brokers.
@@ -25,10 +27,11 @@ FleetMate aims to be the gold-standard, zero-cost, real-time streaming bridge be
 - [x] CodeQL hardening and security pipeline integrations.
 - [x] 100% GitHub Community Standards & Open Source Guide compliance.
 
-### 🔮 Phase 3: Edge Resilience & HA Packaging (v0.3.0) — *Planned*
+### 🔮 Phase 3: Edge Resilience, Packaging & Automation (v0.3.0) — *Planned*
 - [ ] **Home Assistant Add-on**: Native 1-click Home Assistant Add-on distribution.
 - [ ] **Local Edge Buffering**: SQLite local spool during transient PostgreSQL network outages.
 - [ ] **Telemetry Replay Utility**: Replay recorded JSONL telemetry traces for offline debugging and testing.
+- [ ] **Automated Multilingual Documentation Engine (i18n)**: Generic GitHub Actions translation pipeline for multi-language documentation parity (`*.es.md`, `*.de.md`, `*.fr.md`, etc.), ensuring community contributions in any language are automatically synchronized across all supported translations without manual overhead.
 
 ### 🌟 Phase 4: Fleet Intelligence (v1.0.0) — *Future*
 - [ ] **Multi-Vehicle Fleet Routing**: Support concurrent multi-vehicle streaming across independent accounts.
