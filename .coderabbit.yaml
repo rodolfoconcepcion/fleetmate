@@ -93,7 +93,7 @@ reviews:
     - path: "**/*.md"
       instructions: |
         Documentation rules:
-        - English is canonical. Every `*.md` change MUST have a mirrored update in the matching `*.es.md` file (same structure, same sections). Missing mirror is a finding.
+        - English is canonical. Every changed English `*.md` file (excluding `*.es.md`) MUST have a mirrored update in the matching `*.es.md` file (same structure, same sections). Missing mirror is a finding.
         - Flag broken relative links and stale CLI flags/commands that no longer exist.
         - Keep ASCII/narrow diagrams; flag wide Mermaid blocks that break terminal rendering.
 
@@ -132,8 +132,8 @@ reviews:
       - name: "English + Spanish docs parity"
         mode: "warning"
         instructions: |
-          FAIL if a tracked `*.md` file changed but its `*.es.md` counterpart was not updated in the same PR.
-          PASS if both changed or if no user-facing markdown changed.
+          FAIL if a tracked English `*.md` file (not ending in `.es.md`) changed but its `*.es.md` counterpart was not updated in the same PR.
+          PASS if both changed or if only Spanish markdown changed or if no user-facing markdown changed.
       - name: "Prometheus labels bounded"
         mode: "warning"
         instructions: |
@@ -209,13 +209,10 @@ knowledge_base:
       - "docs/**/*.md"
       - "ACCESSIBILITY.md"
   issues:
-    enabled: true
+    scope: "local"
   pull_requests:
-    enabled: true
+    scope: "local"
 
 code_generation:
   docstrings:
-    enabled: true
     language: "en-US"
-  unit_tests:
-    enabled: true
