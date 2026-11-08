@@ -6,9 +6,22 @@ This document outlines the high-level roadmap and future vision for **FleetMate*
 
 ---
 
-## 🎯 Project Vision
+## 🎯 Project Vision & Scope Boundaries
 
 FleetMate aims to be the gold-standard, zero-cost, real-time streaming bridge between Tesla Fleet Telemetry and homelab automation systems (TeslaMate, Home Assistant, Grafana, and MQTT).
+
+### ✅ What is In-Scope
+* **Real-Time Telemetry Streaming**: High-speed, 1 Hz telemetry ingestion from Tesla's official `fleet-telemetry` mTLS server.
+* **Turnkey & Hybrid Homelab Storage**: Full compatibility with TeslaMate PostgreSQL schemas and Home Assistant MQTT auto-discovery.
+* **Edge Resilience**: Zero-loss local buffering, telemetry trace replaying, and transient network outage tolerance.
+* **Self-Hosted Privacy**: 100% self-hosted, independent, zero external subscription or cloud dependency.
+
+### ❌ Non-Goals & Out-of-Scope (Learning to Say No)
+To protect maintainer focus and prevent scope creep (as recommended by [Open Source Guides: Best Practices for Maintainers](https://opensource.guide/best-practices/)), the following are explicitly out of scope:
+1. **Vehicle Control & Remote Commands**: FleetMate is strictly an ingress telemetry pipeline. It does NOT send commands to vehicles (e.g. door unlocking, climate control, honking, or remote start).
+2. **Cloud SaaS / Hosted Service**: FleetMate will never be a commercial hosted multi-tenant cloud service. It is designed solely for self-hosted homelab privacy.
+3. **Custom Dashboard Replacement**: FleetMate does not build a standalone custom web frontend to replace TeslaMate or Home Assistant dashboards; it feeds the existing, proven ecosystems.
+4. **Proprietary Protocol Reverse-Engineering**: FleetMate relies strictly on Tesla's documented official Fleet Telemetry protocols and standard mTLS WebSockets.
 
 ---
 
