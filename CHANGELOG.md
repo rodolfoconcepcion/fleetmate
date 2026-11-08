@@ -1,5 +1,9 @@
 # Changelog
 
+[English](CHANGELOG.md) | [Español](CHANGELOG.es.md)
+
+---
+
 ## [0.2.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.1.0...fleetmate-v0.2.0) (2026-11-08)
 
 
