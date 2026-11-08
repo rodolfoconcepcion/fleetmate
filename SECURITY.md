@@ -1,5 +1,7 @@
 # Security Policy
 
+[English](SECURITY.md) | [Español](SECURITY.es.md)
+
 ## Supported Versions
 
 FleetMate follows semantic versioning and actively maintains security patches for the latest minor releases.

@@ -1,5 +1,7 @@
 # Contributing to FleetMate
 
+[English](CONTRIBUTING.md) | [Español](CONTRIBUTING.es.md)
+
 Thank you for your interest in contributing to **FleetMate**! 🚗⚡
 
 FleetMate is a high-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine and bridge for TeslaMate and Home Assistant. We welcome contributions from developers, homelab enthusiasts, and Tesla owners worldwide.
