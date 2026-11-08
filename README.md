@@ -31,7 +31,20 @@ FleetMate consumes the telemetry stream over MQTT, dynamically detects driving/c
 
 ---
 
----
+### 🎯 Project Scope & Non-Goals
+
+To maintain high architectural focus and code quality (as recommended by [Open Source Guides: Best Practices for Maintainers](https://opensource.guide/best-practices/)), FleetMate establishes clear boundaries:
+
+* **✅ In Scope**:
+  * Real-time 1 Hz mTLS telemetry ingestion from Tesla `fleet-telemetry`.
+  * Turnkey Docker Compose stack (mTLS receptor, MQTT, PostgreSQL, Grafana).
+  * Direct state syncing into TeslaMate PostgreSQL relational database.
+  * Home Assistant MQTT auto-discovery and live vehicle sensor tracking.
+  * Local-first, privacy-focused, zero-cost homelab architecture.
+* **❌ Out of Scope (Non-Goals)**:
+  * **Vehicle Remote Control**: FleetMate is strictly a telemetry ingestion engine; it does not dispatch vehicle commands (locking, climate activation, honking, or remote start).
+  * **Cloud-Hosted SaaS**: FleetMate is strictly self-hosted software—no cloud subscriptions, closed proxies, or telemetry monetization.
+  * **Dashboard Re-invention**: FleetMate bridges telemetry into TeslaMate's Grafana and Home Assistant rather than creating redundant third-party dashboards.
 
 ---
 
