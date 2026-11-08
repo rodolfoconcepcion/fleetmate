@@ -33,3 +33,9 @@ DB_LATENCY = Histogram(
     "Database write latency in seconds",
     buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0),
 )
+
+GEOCODING_REQUESTS = Counter(
+    "fleetmate_geocoding_requests_total",
+    "Total reverse geocoding requests executed against Nominatim",
+    ["status"],
+)

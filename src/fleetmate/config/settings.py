@@ -49,5 +49,22 @@ class Settings(BaseSettings):
     batch_flush_interval_seconds: float = 1.0
     batch_max_size: int = 50
 
+    # Reverse Geocoding (OpenStreetMap Nominatim)
+    geocoding_enabled: bool = Field(
+        default=True, description="Enable asynchronous Nominatim reverse geocoding"
+    )
+    nominatim_base_url: str = Field(
+        default="https://nominatim.openstreetmap.org",
+        description="OpenStreetMap Nominatim API base URL",
+    )
+    nominatim_user_agent: str = Field(
+        default="FleetMate/0.1.0 (Open-Source Telemetry Bridge)",
+        description="Custom User-Agent header required by Nominatim usage policy",
+    )
+    nominatim_rate_limit_seconds: float = Field(
+        default=1.1,
+        description="Minimum delay in seconds between Nominatim API requests",
+    )
+
 
 settings = Settings()

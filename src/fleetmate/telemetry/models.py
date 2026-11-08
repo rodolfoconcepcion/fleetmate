@@ -98,12 +98,17 @@ class VehicleTelemetryPoint(BaseModel):
                 payload.get("IdealBatteryRange", payload.get("ideal_battery_range_km"))
             ),
             rated_battery_range_km=get_dec(
-                payload.get("RatedBatteryRange", payload.get("rated_battery_range_km"))
+                payload.get(
+                    "RatedRange",
+                    payload.get("RatedBatteryRange", payload.get("rated_battery_range_km")),
+                )
             ),
             est_battery_range_km=get_dec(
                 payload.get("EstBatteryRange", payload.get("est_battery_range_km"))
             ),
-            battery_level=get_int(payload.get("BatteryLevel", payload.get("battery_level"))),
+            battery_level=get_int(
+                payload.get("Soc", payload.get("BatteryLevel", payload.get("battery_level")))
+            ),
             usable_battery_level=get_int(
                 payload.get("UsableBatteryLevel", payload.get("usable_battery_level"))
             ),
@@ -113,19 +118,34 @@ class VehicleTelemetryPoint(BaseModel):
             charge_state=payload.get("ChargeState", payload.get("charge_state")),
             charger_voltage=get_int(payload.get("ChargerVoltage", payload.get("charger_voltage"))),
             charger_actual_current=get_int(
-                payload.get("ChargerActualCurrent", payload.get("charger_actual_current"))
+                payload.get(
+                    "ChargeAmps",
+                    payload.get("ChargerActualCurrent", payload.get("charger_actual_current")),
+                )
             ),
             tpms_pressure_fl=get_dec(
-                payload.get("TirePressureFrontLeft", payload.get("tpms_pressure_fl"))
+                payload.get(
+                    "TpmsPressureFl",
+                    payload.get("TirePressureFrontLeft", payload.get("tpms_pressure_fl")),
+                )
             ),
             tpms_pressure_fr=get_dec(
-                payload.get("TirePressureFrontRight", payload.get("tpms_pressure_fr"))
+                payload.get(
+                    "TpmsPressureFr",
+                    payload.get("TirePressureFrontRight", payload.get("tpms_pressure_fr")),
+                )
             ),
             tpms_pressure_rl=get_dec(
-                payload.get("TirePressureRearLeft", payload.get("tpms_pressure_rl"))
+                payload.get(
+                    "TpmsPressureRl",
+                    payload.get("TirePressureRearLeft", payload.get("tpms_pressure_rl")),
+                )
             ),
             tpms_pressure_rr=get_dec(
-                payload.get("TirePressureRearRight", payload.get("tpms_pressure_rr"))
+                payload.get(
+                    "TpmsPressureRr",
+                    payload.get("TirePressureRearRight", payload.get("tpms_pressure_rr")),
+                )
             ),
             is_climate_on=payload.get("IsClimateOn", payload.get("is_climate_on")),
         )

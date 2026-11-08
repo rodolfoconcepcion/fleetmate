@@ -1,10 +1,12 @@
+import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import asyncpg
 
 from fleetmate.config.settings import settings
+from fleetmate.geocoding.nominatim import ResolvedAddress
 from fleetmate.telemetry.models import VehicleTelemetryPoint
 
 logger = logging.getLogger(__name__)
@@ -104,6 +106,84 @@ class TeslaMateRepository:
             logger.error("Failed to insert position into TeslaMate DB: %s", e)
             return None
 
+    async def upsert_address(self, addr: ResolvedAddress) -> int | None:
+        """
+        Upserts a resolved Nominatim address into public.addresses.
+        Reuses existing address rows matching (osm_id, osm_type).
+        Returns the address ID.
+        """
+        if not self.pool:
+            return None
+
+        now = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
+        query = """
+            INSERT INTO public.addresses (
+                osm_id, osm_type, display_name, latitude, longitude,
+                name, house_number, road, neighbourhood, city,
+                county, postcode, state, state_district, country,
+                raw, inserted_at, updated_at
+            ) VALUES (
+                $1, $2, $3, $4, $5,
+                $6, $7, $8, $9, $10,
+                $11, $12, $13, $14, $15,
+                $16::jsonb, $17, $17
+            )
+            ON CONFLICT (osm_id, osm_type) DO UPDATE SET
+                display_name = COALESCE(EXCLUDED.display_name, public.addresses.display_name),
+                updated_at = EXCLUDED.updated_at
+            RETURNING id;
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                record = await conn.fetchrow(
+                    query,
+                    addr.osm_id,
+                    addr.osm_type,
+                    addr.display_name,
+                    addr.latitude,
+                    addr.longitude,
+                    addr.name,
+                    addr.house_number,
+                    addr.road,
+                    addr.neighbourhood,
+                    addr.city,
+                    addr.county,
+                    addr.postcode,
+                    addr.state,
+                    addr.state_district,
+                    addr.country,
+                    json.dumps(addr.raw),
+                    now,
+                )
+                return record["id"] if record else None
+        except Exception as e:
+            logger.error("Failed to upsert address into DB: %s", e)
+            return None
+
+    async def update_drive_start_location(
+        self,
+        drive_id: int,
+        address_id: int | None = None,
+        position_id: int | None = None,
+    ) -> None:
+        """
+        Links start_address_id and/or start_position_id to an active drive.
+        """
+        if not self.pool:
+            return
+
+        query = """
+            UPDATE public.drives
+            SET start_address_id = COALESCE($2, start_address_id),
+                start_position_id = COALESCE($3, start_position_id)
+            WHERE id = $1;
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute(query, drive_id, address_id, position_id)
+        except Exception as e:
+            logger.error("Failed to update start location for drive #%d: %s", drive_id, e)
+
     async def start_drive(
         self,
         car_id: int,
@@ -147,9 +227,12 @@ class TeslaMateRepository:
         end_ideal_range_km: Decimal | None,
         end_rated_range_km: Decimal | None,
         start_odometer: float | None = None,
+        end_address_id: int | None = None,
+        end_position_id: int | None = None,
     ) -> None:
         """
-        Finalizes an existing drive in public.drives with calculated stats.
+        Finalizes an existing drive in public.drives with calculated stats,
+        position bounds, and resolved end address.
         """
         if not self.pool:
             return
@@ -159,13 +242,35 @@ class TeslaMateRepository:
             distance = max(0.0, end_odometer - start_odometer)
 
         query = """
-            UPDATE public.drives
+            WITH drive_stats AS (
+                SELECT
+                    MAX(speed)::smallint AS speed_max,
+                    MAX(power)::smallint AS power_max,
+                    MIN(power)::smallint AS power_min,
+                    ROUND(AVG(outside_temp), 1) AS outside_temp_avg,
+                    ROUND(AVG(inside_temp), 1) AS inside_temp_avg,
+                    MIN(id) AS first_pos_id,
+                    MAX(id) AS last_pos_id
+                FROM public.positions
+                WHERE drive_id = $1
+            )
+            UPDATE public.drives d
             SET end_date = $2,
                 end_km = $3,
                 end_ideal_range_km = $4,
                 end_rated_range_km = $5,
-                distance = COALESCE($6, distance)
-            WHERE id = $1;
+                distance = COALESCE($6, d.distance),
+                end_address_id = COALESCE($7, d.end_address_id),
+                start_position_id = COALESCE(d.start_position_id, ds.first_pos_id),
+                end_position_id = COALESCE($8, ds.last_pos_id),
+                duration_min = GREATEST(0, ROUND(EXTRACT(EPOCH FROM ($2 - d.start_date)) / 60.0))::smallint,
+                speed_max = COALESCE(ds.speed_max, d.speed_max),
+                power_max = COALESCE(ds.power_max, d.power_max),
+                power_min = COALESCE(ds.power_min, d.power_min),
+                outside_temp_avg = COALESCE(ds.outside_temp_avg, d.outside_temp_avg),
+                inside_temp_avg = COALESCE(ds.inside_temp_avg, d.inside_temp_avg)
+            FROM drive_stats ds
+            WHERE d.id = $1;
         """
         try:
             async with self.pool.acquire() as conn:
@@ -177,6 +282,8 @@ class TeslaMateRepository:
                     end_ideal_range_km,
                     end_rated_range_km,
                     distance,
+                    end_address_id,
+                    end_position_id,
                 )
                 logger.info("Finalized drive #%d in TeslaMate DB.", drive_id)
         except Exception as e:
