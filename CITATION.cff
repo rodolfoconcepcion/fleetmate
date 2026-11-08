@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use FleetMate in your research or homelab setup, please cite it as below."
+authors:
+  - family-names: Concepcion
+    given-names: Rodolfo
+    email: rodolfo.concepcion@gmail.com
+title: "FleetMate: High-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine & bridge"
+version: 0.2.0
+date-released: 2026-11-08
+url: "https://github.com/rodolfoconcepcion/fleetmate"
+repository-code: "https://github.com/rodolfoconcepcion/fleetmate"
+license: MIT
+keywords:
+  - tesla
+  - teslamate
+  - fleet-telemetry
+  - mtls
+  - mqtt
+  - home-assistant
