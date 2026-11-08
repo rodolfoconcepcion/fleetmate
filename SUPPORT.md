@@ -32,7 +32,7 @@ If you have a concrete idea for improving FleetMate:
 
 ### 4. Security Vulnerabilities
 If you believe you have discovered a security vulnerability or sensitive leak:
-👉 **Do NOT open a public issue.** Please review our [Security Policy](SECURITY.md) and report privately via [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories) or email [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com).
+👉 **Do NOT open a public issue.** Please review our [Security Policy](SECURITY.md) and report privately via [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories).
 
 ---
 

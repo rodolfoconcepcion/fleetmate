@@ -1,5 +1,7 @@
 # Contributing to FleetMate
 
+[English](CONTRIBUTING.md) | [Español](CONTRIBUTING.es.md)
+
 Thank you for your interest in contributing to **FleetMate**! 🚗⚡
 
 FleetMate is a high-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine and bridge for TeslaMate and Home Assistant. We welcome contributions from developers, homelab enthusiasts, and Tesla owners worldwide.
@@ -17,13 +19,22 @@ FleetMate is a high-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine
 - [Code Style & Quality](#code-style--quality)
 - [Pull Request Process](#pull-request-process)
 - [Conventional Commits](#conventional-commits)
+- [Multilingual Documentation & AI Assistance](#multilingual-documentation--ai-assistance-coderabbit)
 - [Security Vulnerabilities](#security-vulnerabilities)
 
 ---
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Please report unacceptable behavior to [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com).
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:56df1e731e179eccb3a28b7e529fd38732d30ce8b58a36e302c2e6cd339aa2fa -->
+
+By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Please report harassment or other unacceptable behavior privately through the [GitHub Security Advisories reporting form](https://github.com/rodolfoconcepcion/fleetmate/security/advisories/new) (GitHub sign-in required).
+
+Use the title “Code of Conduct report” and describe the incident, relevant dates or links, and its impact in the description. This form also accepts conduct reports: no security vulnerability or proof of concept is required. Replace any vulnerability-specific template prompts with your report; for required fields that do not apply, including proof of concept, enter “Not applicable — conduct report”. Click **Submit report** to send it privately to the repository maintainers. Do not post sensitive details in public issues or discussions.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 ---
 
@@ -166,6 +177,26 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) for autom
 
 ---
 
+## Multilingual Documentation & AI Assistance (CodeRabbit)
+
+FleetMate maintains complete **multilingual documentation parity** (every English guide has a corresponding Spanish counterpart, e.g. `README.md` and `README.es.md`).
+
+### If You Don't Speak Spanish:
+You do **not** need to speak Spanish to contribute to FleetMate! We provide automated AI assistance to handle translations:
+1. **Submit Your PR in English**: Make your changes or additions to English markdown files (`README.md`, `ROADMAP.md`, etc.).
+2. **Use CodeRabbit AI**: CodeRabbit is integrated into this repository and automatically reviews every Pull Request. You can prompt CodeRabbit directly in any PR comment thread:
+   ```text
+   @coderabbitai please generate the Spanish translation for my changes in README.md
+   ```
+3. **Commit the Translation**: Review CodeRabbit's generated translation and commit it to your branch (or a maintainer will gladly assist before merging).
+4. **Automated CI Parity Guardrail**: Our CI suite runs `tests/test_doc_parity.py` on PRs targeting `main` to check for corresponding documentation files, English changelog version headings in translated changelogs, and language switcher links in key documents. It does not check whether translated content is synchronized.
+
+### Alternative Translation Options:
+- **Manual Translation**: If you speak Spanish (or other supported languages), you are very welcome to provide the translations directly in `*.es.md`.
+- **Maintainer Assistance**: If you prefer not to use AI, simply open your PR with your English changes and request maintainer assistance in your PR description. We will translate it for you before merging.
+
+---
+
 ## Security Vulnerabilities
 
-Please do **NOT** open public issues for security vulnerabilities. Review our [Security Policy](SECURITY.md) or email [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com) directly.
+Please do **NOT** open public issues for security vulnerabilities. Review our [Security Policy](SECURITY.md) and report privately via [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories).

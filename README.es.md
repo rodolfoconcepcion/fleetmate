@@ -31,7 +31,20 @@ FleetMate procesa el flujo de telemetría vía MQTT, detecta dinámicamente los 
 
 ---
 
----
+### 🎯 Alcance del Proyecto y No-Objetivos
+
+Para mantener un alto estándar de calidad y enfoque (según la [Guía de Buenas Prácticas para Mantenedores de Open Source](https://opensource.guide/es/best-practices/)), FleetMate define límites claros de alcance:
+
+* **✅ Dentro del Alcance**:
+  * Ingestión de telemetría en tiempo real a 1 Hz por mTLS desde `fleet-telemetry` de Tesla.
+  * Stack completo listo para usar en Docker Compose (receptor mTLS, MQTT, PostgreSQL, Grafana).
+  * Sincronización directa de estados en la base de datos relacional PostgreSQL de TeslaMate.
+  * Autodescubrimiento MQTT para Home Assistant y seguimiento de sensores en vivo.
+  * Arquitectura local, privada y de coste cero para entornos homelab.
+* **❌ Fuera del Alcance (No-Objetivos)**:
+  * **Control Remoto del Vehículo**: FleetMate es estrictamente un motor de lectura de telemetría; no envía comandos al carro (cerraduras, clima, bocina o encendido remoto).
+  * **Plataforma SaaS en la Nube**: FleetMate es software 100% autoalojado (*self-hosted*); no cuenta con suscripciones en la nube, proxies cerrados ni monetización de datos.
+  * **Reinvención de Paneles**: FleetMate alimenta los paneles existentes de Grafana (TeslaMate) y Home Assistant en lugar de crear interfaces web redundantes.
 
 ---
 

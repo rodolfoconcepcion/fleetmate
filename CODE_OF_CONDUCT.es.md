@@ -30,7 +30,7 @@ Los líderes de la comunidad son responsables de aclarar y hacer cumplir nuestra
 
 ## Aplicación
 
-Los casos de comportamiento abusivo, acosador o inaceptable pueden comunicarse a los responsables del proyecto en [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com). Todas las quejas serán evaluadas e investigadas de manera justa y oportuna.
+Los casos de comportamiento abusivo, acosador o inaceptable pueden comunicarse de forma privada a través de [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories) o directamente a los mantenedores del proyecto en GitHub. Todas las quejas serán evaluadas e investigadas de manera justa y oportuna.
 
 ## Atribución
 

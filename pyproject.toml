@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-    { name = "Rodolfo Concepcion", email = "rodolfo.concepcion@gmail.com" }
+    { name = "Rodolfo Concepcion" }
 ]
 keywords = ["tesla", "teslamate", "fleet-telemetry", "mqtt", "home-assistant", "mtls", "streaming"]
 classifiers = [
