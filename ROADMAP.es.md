@@ -6,9 +6,22 @@ Este documento describe la hoja de ruta y la visión a futuro de **FleetMate**, 
 
 ---
 
-## 🎯 Visión del Proyecto
+## 🎯 Visión del Proyecto y Límites de Alcance
 
 FleetMate aspira a ser el puente de transmisión en tiempo real de coste cero y máxima velocidad entre Tesla Fleet Telemetry y sistemas homelab (TeslaMate, Home Assistant, Grafana y MQTT).
+
+### ✅ Dentro del Alcance
+* **Transmisión de Telemetría en Tiempo Real**: Ingestión a alta velocidad (1 Hz) desde el servidor mTLS `fleet-telemetry` oficial de Tesla.
+* **Almacenamiento Homelab Llave en Mano e Híbrido**: Compatibilidad total con los esquemas PostgreSQL de TeslaMate y autodescubrimiento MQTT para Home Assistant.
+* **Resiliencia en el Extremo**: Búfer local sin pérdida de datos, reproducción de trazas de telemetría y tolerancia a caídas de red transitorias.
+* **Privacidad Autoalojada**: 100% independiente y autoalojado, sin suscripciones externas ni dependencias de nube ajena.
+
+### ❌ Fuera del Alcance y No-Objetivos (Aprender a Decir No)
+Para proteger el tiempo del mantenedor y evitar la dispersión de objetivos (según la [Guía de Buenas Prácticas para Mantenedores de Open Source](https://opensource.guide/es/best-practices/)), los siguientes aspectos quedan explícitamente fuera del alcance:
+1. **Control Remoto del Vehículo**: FleetMate es estrictamente un canal de entrada de telemetría. NO envía comandos a los vehículos (apertura de puertas, climatización, bocina o encendido remoto).
+2. **Servicio SaaS en la Nube**: FleetMate nunca será un servicio comercial multiinquilino alojado en la nube. Está concebido exclusivamente para la privacidad homelab autoalojada.
+3. **Reemplazo de Paneles de Control**: FleetMate no desarrolla interfaces web personalizadas para reemplazar los paneles de TeslaMate o Home Assistant; alimenta los ecosistemas existentes.
+4. **Ingeniería Inversa de Protocolos Propietarios**: FleetMate opera exclusivamente sobre los protocolos oficiales documentados de Tesla Fleet Telemetry y WebSockets mTLS estándares.
 
 ---
 
