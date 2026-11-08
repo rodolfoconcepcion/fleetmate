@@ -1,8 +1,10 @@
 import asyncio
 import logging
+from collections.abc import Coroutine
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 
 from fleetmate.config.settings import settings
 from fleetmate.geocoding.nominatim import NominatimGeocoder
@@ -49,7 +51,7 @@ class StateMachineEngine:
         self.last_motion_time: datetime | None = None
         self._background_tasks: set[asyncio.Task[None]] = set()
 
-    def _spawn_background(self, coro) -> None:
+    def _spawn_background(self, coro: Coroutine[Any, Any, None]) -> None:
         task = asyncio.create_task(coro)
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
