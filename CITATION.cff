@@ -4,7 +4,7 @@ authors:
   - family-names: Concepcion
     given-names: Rodolfo
 title: "FleetMate: High-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine & bridge"
-version: 0.2.0
+version: 0.3.0
 date-released: 2026-11-08
 url: "https://github.com/rodolfoconcepcion/fleetmate"
 repository-code: "https://github.com/rodolfoconcepcion/fleetmate"
