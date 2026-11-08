@@ -66,14 +66,16 @@ Seguimos la convención de [Conventional Commits](https://www.conventionalcommit
 FleetMate mantiene una **paridad documental multilingüe** completa (cada guía en inglés cuenta con su respectiva versión en español, ej. `README.md` y `README.es.md`).
 
 ### Si no dominas el español o el inglés:
-¡No necesitas hablar ambos idiomas para contribuir a FleetMate! Contamos con herramientas de asistencia de IA:
+¡No necesitas hablar ambos idiomas para contribuir a FleetMate! Si solo hablas español, puedes proponer tus cambios en español en un issue y solicitar ayuda de un mantenedor para traducirlos a los archivos originales en inglés.
+
+Si puedes contribuir en inglés, contamos con herramientas de asistencia de IA:
 1. **Envía tu PR con normalidad**: Realiza tus cambios o mejoras en los archivos en inglés (`README.md`, `ROADMAP.md`, etc.).
 2. **Utiliza CodeRabbit AI**: CodeRabbit está integrado en este repositorio y revisa automáticamente cada Pull Request. Puedes solicitarle la traducción directamente en cualquier comentario del PR:
    ```text
    @coderabbitai please generate the Spanish translation for my changes in README.md
    ```
 3. **Confirma la traducción**: Revisa la traducción sugerida por CodeRabbit y confírmala en tu rama (o un mantenedor te asistirá con gusto antes de fusionar).
-4. **Protección Automatizada en CI**: Nuestra suite de CI ejecuta `tests/test_doc_parity.py` en cada PR para verificar que todos los documentos clave, versiones y enlaces de cambio de idioma permanezcan 100% sincronizados.
+4. **Protección Automatizada en CI**: Nuestra suite de CI ejecuta `tests/test_doc_parity.py` en los PR dirigidos a `main` para comprobar que existan los archivos de documentación correspondientes, que los encabezados de versiones del changelog en inglés aparezcan en los changelogs traducidos y que los documentos clave tengan enlaces para cambiar de idioma. No comprueba si el contenido traducido está sincronizado.
 
 ### Opciones alternativas:
 - **Traducción manual**: Si dominas ambos idiomas (u otros idiomas soportados), eres muy bienvenido a incluir directamente las traducciones en `*.es.md`.

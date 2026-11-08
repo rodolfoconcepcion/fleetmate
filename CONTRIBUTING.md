@@ -181,7 +181,7 @@ You do **not** need to speak Spanish to contribute to FleetMate! We provide auto
    @coderabbitai please generate the Spanish translation for my changes in README.md
    ```
 3. **Commit the Translation**: Review CodeRabbit's generated translation and commit it to your branch (or a maintainer will gladly assist before merging).
-4. **Automated CI Parity Guardrail**: Our CI suite runs `tests/test_doc_parity.py` on every PR to verify that all core documents, version releases, and language switcher headers remain 100% in sync.
+4. **Automated CI Parity Guardrail**: Our CI suite runs `tests/test_doc_parity.py` on PRs targeting `main` to check for corresponding documentation files, English changelog version headings in translated changelogs, and language switcher links in key documents. It does not check whether translated content is synchronized.
 
 ### Alternative Translation Options:
 - **Manual Translation**: If you speak Spanish (or other supported languages), you are very welcome to provide the translations directly in `*.es.md`.
