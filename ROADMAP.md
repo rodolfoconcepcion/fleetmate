@@ -2,7 +2,7 @@
 
 [English](ROADMAP.md) | [Español](ROADMAP.es.md)
 
-This document outlines the high-level roadmap and future vision for **FleetMate**, following the [Open Source Guide on Best Practices for Maintainers](https://opensource.guide/best-practices-for-maintainers/).
+This document outlines the high-level roadmap and future vision for **FleetMate**, following the [Open Source Guide on Best Practices for Maintainers](https://opensource.guide/best-practices/).
 
 ---
 

@@ -2,7 +2,7 @@
 
 [English](ROADMAP.md) | [Español](ROADMAP.es.md)
 
-Este documento describe la hoja de ruta y la visión a futuro de **FleetMate**, siguiendo la [Guía de Buenas Prácticas para Mantenedores de Open Source](https://opensource.guide/best-practices-for-maintainers/).
+Este documento describe la hoja de ruta y la visión a futuro de **FleetMate**, siguiendo la [Guía de Buenas Prácticas para Mantenedores de Open Source](https://opensource.guide/es/best-practices/).
 
 ---
 
