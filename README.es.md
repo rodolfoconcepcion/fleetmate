@@ -27,7 +27,7 @@ Desde 2024, los modelos recientes de Tesla (**Model 3 Highland, Cybertruck, nuev
 
 **FleetMate** se integra directamente con el servidor oficial de código abierto **`fleet-telemetry`** de Tesla. Tu vehículo establece una conexión directa, cifrada y segura por **mTLS (Mutual TLS) WebSocket** desde la carretera hacia tu servidor, transmitiendo datos en vivo a **1 Hz (intervalos de 1 segundo)** a un **costo REST de $0.00**.
 
-FleetMate procesa el flujo de telemetría vía MQTT, detecta dinámicamente los estados de viaje/carga y escribe directamente en la base de datos **PostgreSQL de TeslaMate** y en **Home Assistant**.
+FleetMate procesa el flujo de telemetría vía MQTT, detecta dinámicamente los estados de viaje/carga y escribe directamente en la base de datos **PostgreSQL de TeslaMate** y en **Home Assistant**, con una hoja de ruta activa hacia la **independencia total de TeslaMate**.
 
 ---
 
@@ -37,14 +37,15 @@ Para mantener un alto estándar de calidad y enfoque (según la [Guía de Buenas
 
 * **✅ Dentro del Alcance**:
   * Ingestión de telemetría en tiempo real a 1 Hz por mTLS desde `fleet-telemetry` de Tesla.
-  * Stack completo listo para usar en Docker Compose (receptor mTLS, MQTT, PostgreSQL, Grafana).
-  * Sincronización directa de estados en la base de datos relacional PostgreSQL de TeslaMate.
+  * **Independencia Total de TeslaMate**: Plan estratégico para descontinuar la dependencia de TeslaMate mediante un modelo de datos propio, motor de almacenamiento nativo y paneles de control dedicados.
+  * Stack completo listo para usar en Docker Compose (receptor mTLS, MQTT, base de datos nativa y Grafana).
+  * Sincronización de estados retrocompatible y herramienta de migración en 1 clic de históricos de TeslaMate.
   * Autodescubrimiento MQTT para Home Assistant y seguimiento de sensores en vivo.
   * Arquitectura local, privada y de coste cero para entornos homelab.
 * **❌ Fuera del Alcance (No-Objetivos)**:
   * **Control Remoto del Vehículo**: FleetMate es estrictamente un motor de lectura de telemetría; no envía comandos al carro (cerraduras, clima, bocina o encendido remoto).
   * **Plataforma SaaS en la Nube**: FleetMate es software 100% autoalojado (*self-hosted*); no cuenta con suscripciones en la nube, proxies cerrados ni monetización de datos.
-  * **Reinvención de Paneles**: FleetMate alimenta los paneles existentes de Grafana (TeslaMate) y Home Assistant en lugar de crear interfaces web redundantes.
+  * **Ingeniería Inversa de Protocolos Propietarios**: FleetMate opera exclusivamente sobre los protocolos oficiales documentados de Tesla Fleet Telemetry y WebSockets mTLS estándares.
 
 ---
 
