@@ -21,4 +21,4 @@ Para garantizar respuestas oportunas y evitar la saturación de los Issues de Gi
    👉 **[Solicitar una Característica](https://github.com/rodolfoconcepcion/fleetmate/issues/new?template=feature_request.yml)**
 
 4. **Vulnerabilidades de Seguridad**:
-   👉 **No abras issues públicos.** Consulta nuestra [Política de Seguridad](SECURITY.es.md) o escribe a `rodolfo.concepcion@gmail.com`.
+   👉 **No abras issues públicos.** Consulta nuestra [Política de Seguridad](SECURITY.es.md) y repórtalo de forma privada en [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories).

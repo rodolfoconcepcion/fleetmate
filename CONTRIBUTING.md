@@ -26,7 +26,7 @@ FleetMate is a high-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Please report unacceptable behavior to [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com).
+By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Please report unacceptable behavior privately via [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories).
 
 ---
 
@@ -191,4 +191,4 @@ You do **not** need to speak Spanish to contribute to FleetMate! We provide auto
 
 ## Security Vulnerabilities
 
-Please do **NOT** open public issues for security vulnerabilities. Review our [Security Policy](SECURITY.md) or email [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com) directly.
+Please do **NOT** open public issues for security vulnerabilities. Review our [Security Policy](SECURITY.md) and report privately via [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories).

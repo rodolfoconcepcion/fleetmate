@@ -3,7 +3,6 @@ message: "If you use FleetMate in your research or homelab setup, please cite it
 authors:
   - family-names: Concepcion
     given-names: Rodolfo
-    email: rodolfo.concepcion@gmail.com
 title: "FleetMate: High-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine & bridge"
 version: 0.2.0
 date-released: 2026-11-08

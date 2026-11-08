@@ -25,5 +25,5 @@ Nos esforzamos por garantizar que todas las interfaces, herramientas de línea d
 ## Reportes y Sugerencias
 
 Si encuentras dificultades de accesibilidad o tienes sugerencias:
-- **Correo**: [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com)
+- **Debates**: [GitHub Discussions](https://github.com/rodolfoconcepcion/fleetmate/discussions) (Categoría: `Ideas` o `General`)
 - **GitHub Issues**: Abre un reporte en [GitHub Issues](https://github.com/rodolfoconcepcion/fleetmate/issues).

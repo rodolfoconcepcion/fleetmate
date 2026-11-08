@@ -41,7 +41,7 @@ FleetMate's primary interface is a command-line interface (CLI) and background d
 
 We welcome your feedback on the accessibility of FleetMate. If you encounter accessibility barriers, difficult-to-parse terminal output, or have suggestions for improvements:
 
-- **Email**: [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com) (Subject: `[Accessibility] FleetMate`)
+- **Discussions**: [GitHub Discussions](https://github.com/rodolfoconcepcion/fleetmate/discussions) (Category: `Ideas` or `General`)
 - **GitHub Issues**: Open an issue on [GitHub Issues](https://github.com/rodolfoconcepcion/fleetmate/issues) detailing the barrier and the assistive technology used.
 
 We aim to respond to accessibility reports within 2 business days.

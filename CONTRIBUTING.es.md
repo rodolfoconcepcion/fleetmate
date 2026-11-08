@@ -10,7 +10,7 @@ FleetMate es un motor de transmisión mTLS y puente de telemetría de alta veloc
 
 ## Código de Conducta
 
-Al participar en este proyecto, aceptas cumplir con nuestro [Código de Conducta](CODE_OF_CONDUCT.es.md). Puedes reportar comportamientos inaceptables a [rodolfo.concepcion@gmail.com](mailto:rodolfo.concepcion@gmail.com).
+Al participar en este proyecto, aceptas cumplir con nuestro [Código de Conducta](CODE_OF_CONDUCT.es.md). Puedes reportar comportamientos inaceptables de forma privada a través de [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories).
 
 ---
 

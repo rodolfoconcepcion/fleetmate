@@ -15,13 +15,7 @@ FleetMate sigue el versionado semántico y mantiene activamente parches de segur
 
 Nos tomamos la seguridad de FleetMate, de los vehículos Tesla y de la infraestructura homelab con la máxima seriedad.
 
-Si descubres una vulnerabilidad de seguridad, **por favor no abras un issue público.** En su lugar, repórtala mediante uno de los siguientes canales:
-
-1. **Reporte Privado de Vulnerabilidades en GitHub (Recomendado):**
-   Dirígete a la pestaña de [Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories) y haz clic en **"Report a vulnerability"**.
-
-2. **Contacto Directo de Seguridad:**
-   Correo: `rodolfo.concepcion@gmail.com` con el asunto `[SECURITY] Reporte de Vulnerabilidad en FleetMate`.
+Si descubres una vulnerabilidad de seguridad, **por favor no abras un issue público.** En su lugar, repórtala de forma privada a través de [GitHub Security Advisories](https://github.com/rodolfoconcepcion/fleetmate/security/advisories) haciendo clic en **"Report a vulnerability"**.
 
 ### Qué incluir en tu reporte:
 * Una descripción detallada del problema y el impacto potencial.
