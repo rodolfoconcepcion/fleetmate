@@ -58,3 +58,23 @@ Seguimos la convención de [Conventional Commits](https://www.conventionalcommit
 
 > [!IMPORTANT]
 > Recuerda que los mensajes de commit, descripciones de PR y comentarios de código deben estar redactados en **inglés**.
+
+---
+
+## Documentación Multilingüe y Asistencia con IA (CodeRabbit)
+
+FleetMate mantiene una **paridad documental multilingüe** completa (cada guía en inglés cuenta con su respectiva versión en español, ej. `README.md` y `README.es.md`).
+
+### Si no dominas el español o el inglés:
+¡No necesitas hablar ambos idiomas para contribuir a FleetMate! Contamos con herramientas de asistencia de IA:
+1. **Envía tu PR con normalidad**: Realiza tus cambios o mejoras en los archivos en inglés (`README.md`, `ROADMAP.md`, etc.).
+2. **Utiliza CodeRabbit AI**: CodeRabbit está integrado en este repositorio y revisa automáticamente cada Pull Request. Puedes solicitarle la traducción directamente en cualquier comentario del PR:
+   ```text
+   @coderabbitai please generate the Spanish translation for my changes in README.md
+   ```
+3. **Confirma la traducción**: Revisa la traducción sugerida por CodeRabbit y confírmala en tu rama (o un mantenedor te asistirá con gusto antes de fusionar).
+4. **Protección Automatizada en CI**: Nuestra suite de CI ejecuta `tests/test_doc_parity.py` en cada PR para verificar que todos los documentos clave, versiones y enlaces de cambio de idioma permanezcan 100% sincronizados.
+
+### Opciones alternativas:
+- **Traducción manual**: Si dominas ambos idiomas (u otros idiomas soportados), eres muy bienvenido a incluir directamente las traducciones en `*.es.md`.
+- **Asistencia del mantenedor**: Si prefieres no utilizar IA, simplemente abre tu PR con tus cambios en inglés y solicita asistencia en la descripción. Nosotros nos encargaremos de traducirlo antes de fusionar.

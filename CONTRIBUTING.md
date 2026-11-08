@@ -19,6 +19,7 @@ FleetMate is a high-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine
 - [Code Style & Quality](#code-style--quality)
 - [Pull Request Process](#pull-request-process)
 - [Conventional Commits](#conventional-commits)
+- [Multilingual Documentation & AI Assistance](#multilingual-documentation--ai-assistance-coderabbit)
 - [Security Vulnerabilities](#security-vulnerabilities)
 
 ---
@@ -165,6 +166,26 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) for autom
 
 > [!IMPORTANT]
 > All commit messages, code comments, pull request titles, and documentation must be written in **English**.
+
+---
+
+## Multilingual Documentation & AI Assistance (CodeRabbit)
+
+FleetMate maintains complete **multilingual documentation parity** (every English guide has a corresponding Spanish counterpart, e.g. `README.md` and `README.es.md`).
+
+### If You Don't Speak Spanish:
+You do **not** need to speak Spanish to contribute to FleetMate! We provide automated AI assistance to handle translations:
+1. **Submit Your PR in English**: Make your changes or additions to English markdown files (`README.md`, `ROADMAP.md`, etc.).
+2. **Use CodeRabbit AI**: CodeRabbit is integrated into this repository and automatically reviews every Pull Request. You can prompt CodeRabbit directly in any PR comment thread:
+   ```text
+   @coderabbitai please generate the Spanish translation for my changes in README.md
+   ```
+3. **Commit the Translation**: Review CodeRabbit's generated translation and commit it to your branch (or a maintainer will gladly assist before merging).
+4. **Automated CI Parity Guardrail**: Our CI suite runs `tests/test_doc_parity.py` on every PR to verify that all core documents, version releases, and language switcher headers remain 100% in sync.
+
+### Alternative Translation Options:
+- **Manual Translation**: If you speak Spanish (or other supported languages), you are very welcome to provide the translations directly in `*.es.md`.
+- **Maintainer Assistance**: If you prefer not to use AI, simply open your PR with your English changes and request maintainer assistance in your PR description. We will translate it for you before merging.
 
 ---
 
