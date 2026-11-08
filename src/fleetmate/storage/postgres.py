@@ -288,3 +288,207 @@ class TeslaMateRepository:
                 logger.info("Finalized drive #%d in TeslaMate DB.", drive_id)
         except Exception as e:
             logger.error("Failed to end drive #%d in TeslaMate DB: %s", drive_id, e)
+
+    async def start_charging_process(
+        self,
+        car_id: int,
+        start_time: datetime,
+        position_id: int,
+        start_battery_level: int | None = None,
+        start_ideal_range_km: Decimal | None = None,
+        start_rated_range_km: Decimal | None = None,
+        address_id: int | None = None,
+    ) -> int | None:
+        """
+        Initializes a new charging session in public.charging_processes.
+        Requires a non-null position_id per PostgreSQL schema constraints.
+        """
+        if not self.pool:
+            return None
+
+        query = """
+            INSERT INTO public.charging_processes (
+                car_id, start_date, position_id,
+                start_battery_level, start_ideal_range_km, start_rated_range_km,
+                address_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id;
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                record = await conn.fetchrow(
+                    query,
+                    car_id,
+                    start_time.replace(tzinfo=None),
+                    position_id,
+                    start_battery_level,
+                    start_ideal_range_km,
+                    start_rated_range_km,
+                    address_id,
+                )
+                return record["id"] if record else None
+        except Exception as e:
+            logger.error("Failed to start charging process in DB: %s", e)
+            return None
+
+    async def update_charging_process_address(
+        self,
+        charging_process_id: int,
+        address_id: int | None = None,
+    ) -> None:
+        """
+        Links a resolved Nominatim address_id to an active charging_process.
+        """
+        if not self.pool or address_id is None:
+            return
+
+        query = """
+            UPDATE public.charging_processes
+            SET address_id = COALESCE($2, address_id)
+            WHERE id = $1;
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute(query, charging_process_id, address_id)
+        except Exception as e:
+            logger.error(
+                "Failed to update address for charging_process #%d: %s",
+                charging_process_id,
+                e,
+            )
+
+    async def insert_charge(
+        self,
+        charging_process_id: int,
+        point: VehicleTelemetryPoint,
+        charge_energy_added: Decimal,
+        charger_power: int,
+    ) -> int | None:
+        """
+        Inserts a single charging curve data point into public.charges.
+        Respects NOT NULL constraints on charge_energy_added, charger_power,
+        and ideal_battery_range_km, and CHECK (charger_phases > 0).
+        """
+        if not self.pool:
+            return None
+
+        ideal_range = (
+            point.ideal_battery_range_km
+            or point.rated_battery_range_km
+            or point.est_battery_range_km
+            or Decimal("0.0")
+        )
+        phases = (
+            point.charger_phases
+            if (point.charger_phases is not None and point.charger_phases > 0)
+            else None
+        )
+
+        query = """
+            INSERT INTO public.charges (
+                date, charging_process_id, battery_level, usable_battery_level,
+                charge_energy_added, charger_actual_current, charger_phases,
+                charger_pilot_current, charger_power, charger_voltage,
+                fast_charger_present, conn_charge_cable, fast_charger_brand,
+                fast_charger_type, ideal_battery_range_km, rated_battery_range_km,
+                outside_temp, battery_heater_on, battery_heater
+            ) VALUES (
+                $1, $2, $3, $4,
+                $5, $6, $7,
+                $8, $9, $10,
+                $11, $12, $13,
+                $14, $15, $16,
+                $17, $18, $18
+            ) RETURNING id;
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                record = await conn.fetchrow(
+                    query,
+                    point.timestamp.replace(tzinfo=None),
+                    charging_process_id,
+                    point.battery_level,
+                    point.usable_battery_level,
+                    charge_energy_added,
+                    point.charger_actual_current,
+                    phases,
+                    point.charger_pilot_current,
+                    charger_power,
+                    point.charger_voltage,
+                    point.fast_charger_present,
+                    point.conn_charge_cable,
+                    point.fast_charger_brand,
+                    point.fast_charger_type,
+                    ideal_range,
+                    point.rated_battery_range_km,
+                    point.outside_temp,
+                    point.battery_heater_on,
+                )
+                return record["id"] if record else None
+        except Exception as e:
+            logger.error("Failed to insert charge point into DB: %s", e)
+            return None
+
+    async def end_charging_process(
+        self,
+        charging_process_id: int,
+        end_time: datetime,
+        end_battery_level: int | None = None,
+        end_ideal_range_km: Decimal | None = None,
+        end_rated_range_km: Decimal | None = None,
+        charge_energy_added: Decimal | None = None,
+        address_id: int | None = None,
+    ) -> None:
+        """
+        Finalizes an active charging session in public.charging_processes,
+        aggregating duration, energy added, final SoC, and average outside temperature
+        from public.charges.
+        """
+        if not self.pool:
+            return
+
+        query = """
+            WITH charge_stats AS (
+                SELECT
+                    MAX(charge_energy_added) AS max_energy_added,
+                    ROUND(AVG(outside_temp), 1) AS outside_temp_avg,
+                    (ARRAY_AGG(battery_level ORDER BY date DESC) FILTER (WHERE battery_level IS NOT NULL))[1] AS last_soc,
+                    (ARRAY_AGG(ideal_battery_range_km ORDER BY date DESC) FILTER (WHERE ideal_battery_range_km IS NOT NULL))[1] AS last_ideal_range,
+                    (ARRAY_AGG(rated_battery_range_km ORDER BY date DESC) FILTER (WHERE rated_battery_range_km IS NOT NULL))[1] AS last_rated_range
+                FROM public.charges
+                WHERE charging_process_id = $1
+            )
+            UPDATE public.charging_processes cp
+            SET end_date = $2,
+                end_battery_level = COALESCE($3, cs.last_soc, cp.end_battery_level),
+                end_ideal_range_km = COALESCE($4, cs.last_ideal_range, cp.end_ideal_range_km),
+                end_rated_range_km = COALESCE($5, cs.last_rated_range, cp.end_rated_range_km),
+                charge_energy_added = COALESCE($6, cs.max_energy_added, cp.charge_energy_added, 0.00),
+                address_id = COALESCE($7, cp.address_id),
+                duration_min = GREATEST(0, ROUND(EXTRACT(EPOCH FROM ($2 - cp.start_date)) / 60.0))::smallint,
+                outside_temp_avg = COALESCE(cs.outside_temp_avg, cp.outside_temp_avg)
+            FROM charge_stats cs
+            WHERE cp.id = $1;
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute(
+                    query,
+                    charging_process_id,
+                    end_time.replace(tzinfo=None),
+                    end_battery_level,
+                    end_ideal_range_km,
+                    end_rated_range_km,
+                    charge_energy_added,
+                    address_id,
+                )
+                logger.info(
+                    "Finalized charging_process #%d in DB.",
+                    charging_process_id,
+                )
+        except Exception as e:
+            logger.error(
+                "Failed to end charging_process #%d in DB: %s",
+                charging_process_id,
+                e,
+            )

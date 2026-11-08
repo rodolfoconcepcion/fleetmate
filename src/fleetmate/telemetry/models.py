@@ -30,6 +30,15 @@ class VehicleTelemetryPoint(BaseModel):
     charge_state: str | None = None
     charger_voltage: int | None = None
     charger_actual_current: int | None = None
+    charger_power: int | None = None  # kW
+    charger_phases: int | None = None
+    charger_pilot_current: int | None = None
+    charge_energy_added: Decimal | None = None  # kWh
+    fast_charger_present: bool | None = None
+    fast_charger_brand: str | None = None
+    fast_charger_type: str | None = None
+    conn_charge_cable: str | None = None
+    battery_heater_on: bool | None = None
     tpms_pressure_fl: Decimal | None = None
     tpms_pressure_fr: Decimal | None = None
     tpms_pressure_rl: Decimal | None = None
@@ -115,7 +124,10 @@ class VehicleTelemetryPoint(BaseModel):
             outside_temp=get_dec(payload.get("OutsideTemp", payload.get("outside_temp"))),
             inside_temp=get_dec(payload.get("InsideTemp", payload.get("inside_temp"))),
             gear=payload.get("Gear", payload.get("gear")),
-            charge_state=payload.get("ChargeState", payload.get("charge_state")),
+            charge_state=payload.get(
+                "DetailedChargeState",
+                payload.get("ChargeState", payload.get("charge_state")),
+            ),
             charger_voltage=get_int(payload.get("ChargerVoltage", payload.get("charger_voltage"))),
             charger_actual_current=get_int(
                 payload.get(
@@ -123,6 +135,38 @@ class VehicleTelemetryPoint(BaseModel):
                     payload.get("ChargerActualCurrent", payload.get("charger_actual_current")),
                 )
             ),
+            charger_power=get_int(
+                payload.get(
+                    "ChargerPower",
+                    payload.get(
+                        "ACChargingPower",
+                        payload.get("DCChargingPower", payload.get("charger_power")),
+                    ),
+                )
+            ),
+            charger_phases=get_int(payload.get("ChargerPhases", payload.get("charger_phases"))),
+            charger_pilot_current=get_int(
+                payload.get(
+                    "ChargeCurrentRequest",
+                    payload.get("ChargerPilotCurrent", payload.get("charger_pilot_current")),
+                )
+            ),
+            charge_energy_added=get_dec(
+                payload.get(
+                    "ChargeEnergyAdded",
+                    payload.get(
+                        "ACChargingEnergyIn",
+                        payload.get("DCChargingEnergyIn", payload.get("charge_energy_added")),
+                    ),
+                )
+            ),
+            fast_charger_present=payload.get(
+                "FastChargerPresent", payload.get("fast_charger_present")
+            ),
+            fast_charger_brand=payload.get("FastChargerBrand", payload.get("fast_charger_brand")),
+            fast_charger_type=payload.get("FastChargerType", payload.get("fast_charger_type")),
+            conn_charge_cable=payload.get("ConnChargeCable", payload.get("conn_charge_cable")),
+            battery_heater_on=payload.get("BatteryHeaterOn", payload.get("battery_heater_on")),
             tpms_pressure_fl=get_dec(
                 payload.get(
                     "TpmsPressureFl",

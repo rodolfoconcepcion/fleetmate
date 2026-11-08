@@ -18,6 +18,12 @@ DRIVES_DETECTED = Counter(
     ["event"],
 )
 
+CHARGES_DETECTED = Counter(
+    "fleetmate_charges_detected_total",
+    "Total charging sessions initiated and finalized by StateMachineEngine",
+    ["event"],
+)
+
 CURRENT_VEHICLE_SPEED = Gauge(
     "fleetmate_vehicle_speed_kmh",
     "Current live speed of the vehicle in km/h",
