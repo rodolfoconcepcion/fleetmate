@@ -1,17 +1,221 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: "en-US"
 early_access: false
+
+tone_instructions: "Be direct and technical. Skip praise, focus on defects, risks and concrete fixes."
+
 reviews:
-  profile: "chill"
+  profile: "assertive"
   request_changes_workflow: false
   high_level_summary: true
+  high_level_summary_instructions: "Summarize the change, list affected runtime paths (telemetry ingest, storage, MQTT, metrics) and state the blast radius."
   poem: false
   review_status: true
   collapse_walkthrough: false
+  sequence_diagrams: true
+  assess_linked_issues: true
+  estimate_code_review_effort: true
+
+  # Keep generated/vendored noise out of reviews
+  path_filters:
+    - "!dist/**"
+    - "!**/__pycache__/**"
+    - "!uv.lock"
+    - "!*.cff"
+
   auto_review:
     enabled: true
     drafts: false
+    auto_incremental_review: true
     base_branches:
       - "main"
+
+  # ============ SKILL 1..N: per-path review skills ============
+  path_instructions:
+    - path: "src/**/*.py"
+      instructions: |
+        Async runtime discipline (this service streams data 24/7):
+        - Flag any blocking call (requests, time.sleep, sync file I/O, sync DB drivers) inside `async def`.
+        - Every awaited I/O needs a timeout or cancellation path; flag unbounded `await` on network calls.
+        - Flag tasks created without being stored/awaited; require proper cancellation on shutdown.
+        - No `except Exception: pass` and no bare `except:`; catch specific exceptions and log with context.
+        - Flag shared mutable module-level state accessed from multiple tasks without a lock.
+
+    - path: "src/fleetmate/telemetry/**"
+      instructions: |
+        Tesla Fleet Telemetry contract (highest risk area):
+        - Field names, enum values and units MUST match the official Fleet Telemetry protobuf schema. Flag any rename, unit change (km vs mi, C vs F, Wh vs kWh) or silent type widening.
+        - Adding or removing a field is a breaking producer change: require a migration note and a test.
+        - Timestamps must be timezone-aware UTC; flag naive datetimes.
+        - Flag any code path that can drop or reorder messages silently; rejections must increment a metric and log the reason.
+        - Never log VIN, access tokens, or full payloads at INFO or above.
+
+    - path: "src/fleetmate/storage/**"
+      instructions: |
+        Persistence safety:
+        - All SQL must be parameterized; flag f-strings/format in queries.
+        - Flag DDL or schema mutation at service startup unless idempotent and gated by a migration.
+        - Inserts on the telemetry hot path must be batched or COPY-based; flag per-event round trips.
+        - Enforce UTC `timestamptz` and NOT NULL constraints on required telemetry columns.
+        - Flag unbounded queries without LIMIT and missing indexes on new filter/join columns.
+
+    - path: "src/fleetmate/mqtt/**"
+      instructions: |
+        Home Assistant / MQTT compatibility:
+        - Topic names and `unique_id`s are a public contract: flag any rename without a documented migration path.
+        - Require `retain=True` for discovery/config topics and correct QoS semantics for state topics.
+        - Flag payload changes that break existing HA entities (type, unit_of_measurement, device_class).
+        - Reconnect logic must be exponential-backoff based and must not spin on auth failures.
+
+    - path: "src/fleetmate/metrics/**"
+      instructions: |
+        Prometheus hygiene:
+        - Flag unbounded label cardinality. Labels MUST NOT contain VIN, vehicle ID, session ID, timestamps or error text.
+        - Follow naming: `_total` for counters, `_seconds`/`_bytes` base units for gauges/histograms.
+        - New metrics must be registered once (no double registration on reload).
+
+    - path: "src/fleetmate/config/**"
+      instructions: |
+        Configuration contract:
+        - Every new setting must be added to `.env.example` and documented in `README.md`.
+        - Defaults must be safe and must never contain secrets or real endpoints.
+        - Flag required settings without validation or a clear error message at startup.
+        - Secrets must come from env/files only; flag any secret written to disk or logs.
+
+    - path: "tests/**"
+      instructions: |
+        Test quality:
+        - New telemetry field, MQTT payload or SQL path requires a matching test. Missing coverage is a blocking comment.
+        - Unit tests must not hit the network, a real broker or a real database; require fakes/mocks.
+        - Require at least one failure-path assertion (timeout, malformed payload, DB error), not only the happy path.
+        - Flag flaky patterns: `sleep`, wall-clock dependencies, unordered collection comparisons.
+
+    - path: "**/*.md"
+      instructions: |
+        Documentation rules:
+        - English is canonical. Every `*.md` change MUST have a mirrored update in the matching `*.es.md` file (same structure, same sections). Missing mirror is a finding.
+        - Flag broken relative links and stale CLI flags/commands that no longer exist.
+        - Keep ASCII/narrow diagrams; flag wide Mermaid blocks that break terminal rendering.
+
+    - path: "Dockerfile"
+      instructions: |
+        Container hardening:
+        - Require a pinned base image tag (no `latest`), a non-root USER, and no secrets in ARG/ENV.
+        - Flag `apt-get install` without `--no-install-recommends` + cleanup in the same layer.
+        - mTLS certs must be mounted at runtime, never baked into the image.
+
+    - path: "deploy/**"
+      instructions: |
+        Deployment safety:
+        - Flag any change that widens host port exposure or mounts the Docker socket.
+        - Secrets must be referenced from env/secret files, never committed.
+        - Flag restart policies and healthchecks removed from long-running services.
+
+  # ============ Custom pre-merge gates (deterministic) ============
+  pre_merge_checks:
+    docstrings:
+      mode: "warning"
+    title:
+      mode: "warning"
+      requirements: "Use Conventional Commits: type(scope): imperative summary"
+    custom_checks:
+      - name: "No secrets or key material in diff"
+        mode: "error"
+        instructions: |
+          FAIL if the diff adds private keys, PEM blocks, OAuth tokens, API keys, passwords, or a populated .env file.
+          PASS if only placeholders, references to env vars, or redacted examples are added.
+      - name: "Breaking schema changes documented"
+        mode: "error"
+        instructions: |
+          FAIL if telemetry field names, units, MQTT topics, unique_ids or DB columns are renamed/removed without an updated section in CHANGELOG.md describing the migration.
+          PASS otherwise.
+      - name: "English + Spanish docs parity"
+        mode: "warning"
+        instructions: |
+          FAIL if a tracked `*.md` file changed but its `*.es.md` counterpart was not updated in the same PR.
+          PASS if both changed or if no user-facing markdown changed.
+      - name: "Prometheus labels bounded"
+        mode: "warning"
+        instructions: |
+          FAIL if a new or modified metric uses a label derived from VIN, vehicle id, session id, timestamp or free-text error.
+          PASS otherwise.
+
+  # ============ Optional: reusable agent recipes ============
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    custom:
+      - name: "add type hints"
+        enabled: true
+        instructions: "Add precise type hints to changed public functions and dataclasses. Do not alter runtime behavior. Keep the diff minimal and preserve existing docstrings."
+      - name: "mirror spanish docs"
+        enabled: true
+        instructions: "For every changed English markdown file, produce the matching *.es.md update with identical structure and section order. Keep English canonical and do not translate code, commands or identifiers."
+      - name: "update changelog"
+        enabled: true
+        instructions: "Add a concise entry to CHANGELOG.md under the unreleased section, grouped as Added / Changed / Fixed / Security. Reference the PR number. Do not bump versions."
+
+  # ============ Linters/analyzers enabled as review sensors ============
+  tools:
+    ruff:
+      enabled: true
+    pylint:
+      enabled: false
+    gitleaks:
+      enabled: true
+    trufflehog:
+      enabled: true
+    semgrep:
+      enabled: true
+    actionlint:
+      enabled: true
+    hadolint:
+      enabled: true
+    yamllint:
+      enabled: true
+    checkov:
+      enabled: true
+    trivy:
+      enabled: true
+    osvScanner:
+      enabled: true
+    markdownlint:
+      enabled: true
+    dotenvLint:
+      enabled: true
+
+  # ============ Risk context used by assessments/auto-approval ============
+  security_risk_instructions: |
+    This service holds Tesla Fleet API credentials and mTLS certificates, and ingests vehicle location data.
+    Highest risk: auth/token handling, certificate loading, TLS verification (verify=False), log statements touching VIN/tokens,
+    SQL injection, and any new outbound network destination. Credentials are supplied via env vars and mounted files only.
+  merge_risk_instructions: |
+    High risk: telemetry schema changes, DB migrations, MQTT topic/unique_id changes, TLS/auth code, dependency major bumps.
+    Low risk: docs, tests, CI config, README/i18n mirrors, formatting-only changes.
+
 chat:
   auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: "local"
+    approval_delay: 0
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CONTRIBUTING.md"
+      - "docs/**/*.md"
+      - "ACCESSIBILITY.md"
+  issues:
+    enabled: true
+  pull_requests:
+    enabled: true
+
+code_generation:
+  docstrings:
+    enabled: true
+    language: "en-US"
+  unit_tests:
+    enabled: true
