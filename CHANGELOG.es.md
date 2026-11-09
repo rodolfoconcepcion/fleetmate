@@ -4,6 +4,23 @@
 
 ---
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:02b71d34e08d5cdf831abc314ae413fa78e304e30ca8cfa08907e7fba050bf25 -->
+
+## [0.5.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.4.0...fleetmate-v0.5.0) (2026-11-09)
+
+### Características (Features)
+
+* **charging:** implementación de una máquina de estados para sesiones de carga en tiempo real y seguimiento de kWh (cierra [#15](https://github.com/rodolfoconcepcion/fleetmate/issues/15)) ([8965e67](https://github.com/rodolfoconcepcion/fleetmate/commit/8965e672dff94e0b7515b4e437efb114d5b45490))
+* **geofences:** incorporación de detección nativa de límites de geocercas y una calculadora de costos de electricidad (cierra [#16](https://github.com/rodolfoconcepcion/fleetmate/issues/16)) ([f5785ce](https://github.com/rodolfoconcepcion/fleetmate/commit/f5785cedd42439502bc80cfb270c88cc47fdad2a))
+
+### Correcciones de Errores (Bug Fixes)
+
+* **community:** priorización de los archivos canónicos de la comunidad en inglés en el directorio .github ([#21](https://github.com/rodolfoconcepcion/fleetmate/issues/21)) ([7496f50](https://github.com/rodolfoconcepcion/fleetmate/commit/7496f50d1206033e7eac639482b88234b7f8d760))
+
+<!-- /coderabbit-ai-generated:v1 -->
+
 ## [0.4.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.3.0...fleetmate-v0.4.0) (2026-11-08)
 
 ### Características (Features)

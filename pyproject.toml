@@ -1,6 +1,6 @@
 [project]
 name = "fleetmate"
-version = "0.4.0"
+version = "0.5.0"
 description = "High-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine & bridge for TeslaMate and Home Assistant"
 readme = "README.md"
 requires-python = ">=3.12"

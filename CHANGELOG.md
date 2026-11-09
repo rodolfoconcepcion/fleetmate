@@ -4,6 +4,19 @@
 
 ---
 
+## [0.5.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.4.0...fleetmate-v0.5.0) (2026-11-09)
+
+
+### Features
+
+* **charging:** implement real-time charging session state machine and kWh tracking (closes [#15](https://github.com/rodolfoconcepcion/fleetmate/issues/15)) ([8965e67](https://github.com/rodolfoconcepcion/fleetmate/commit/8965e672dff94e0b7515b4e437efb114d5b45490))
+* **geofences:** add native geofence boundary detection and electricity cost calculator (closes [#16](https://github.com/rodolfoconcepcion/fleetmate/issues/16)) ([f5785ce](https://github.com/rodolfoconcepcion/fleetmate/commit/f5785cedd42439502bc80cfb270c88cc47fdad2a))
+
+
+### Bug Fixes
+
+* **community:** prioritize canonical English community files in .github directory ([#21](https://github.com/rodolfoconcepcion/fleetmate/issues/21)) ([7496f50](https://github.com/rodolfoconcepcion/fleetmate/commit/7496f50d1206033e7eac639482b88234b7f8d760))
+
 ## [0.4.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.3.0...fleetmate-v0.4.0) (2026-11-08)
 
 
