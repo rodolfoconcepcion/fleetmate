@@ -7,6 +7,7 @@ import asyncpg
 
 from fleetmate.config.settings import settings
 from fleetmate.geocoding.nominatim import ResolvedAddress
+from fleetmate.geofences.detector import GeofenceRecord, find_matching_geofence
 from fleetmate.telemetry.models import VehicleTelemetryPoint
 
 logger = logging.getLogger(__name__)
@@ -160,14 +161,54 @@ class TeslaMateRepository:
             logger.error("Failed to upsert address into DB: %s", e)
             return None
 
+    async def find_geofence(
+        self,
+        latitude: Decimal,
+        longitude: Decimal,
+    ) -> GeofenceRecord | None:
+        """
+        Loads all configured geofences from public.geofences and returns the
+        closest matching GeofenceRecord whose radius contains (latitude, longitude).
+        """
+        if not self.pool:
+            return None
+
+        query = """
+            SELECT
+                id, name, latitude, longitude, radius,
+                cost_per_unit, session_fee, billing_type::text AS billing_type
+            FROM public.geofences;
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(query)
+                geofences = [
+                    GeofenceRecord(
+                        id=r["id"],
+                        name=r["name"],
+                        latitude=r["latitude"],
+                        longitude=r["longitude"],
+                        radius=r["radius"],
+                        cost_per_unit=r["cost_per_unit"],
+                        session_fee=r["session_fee"],
+                        billing_type=r["billing_type"] or "per_kwh",
+                    )
+                    for r in rows
+                ]
+                return find_matching_geofence(latitude, longitude, geofences)
+        except Exception as e:
+            logger.error("Failed to query geofences from DB: %s", e)
+            return None
+
     async def update_drive_start_location(
         self,
         drive_id: int,
         address_id: int | None = None,
         position_id: int | None = None,
+        geofence_id: int | None = None,
     ) -> None:
         """
-        Links start_address_id and/or start_position_id to an active drive.
+        Links start_address_id, start_position_id, and/or start_geofence_id to an active drive.
         """
         if not self.pool:
             return
@@ -175,12 +216,13 @@ class TeslaMateRepository:
         query = """
             UPDATE public.drives
             SET start_address_id = COALESCE($2, start_address_id),
-                start_position_id = COALESCE($3, start_position_id)
+                start_position_id = COALESCE($3, start_position_id),
+                start_geofence_id = COALESCE($4, start_geofence_id)
             WHERE id = $1;
         """
         try:
             async with self.pool.acquire() as conn:
-                await conn.execute(query, drive_id, address_id, position_id)
+                await conn.execute(query, drive_id, address_id, position_id, geofence_id)
         except Exception as e:
             logger.error("Failed to update start location for drive #%d: %s", drive_id, e)
 
@@ -229,10 +271,11 @@ class TeslaMateRepository:
         start_odometer: float | None = None,
         end_address_id: int | None = None,
         end_position_id: int | None = None,
+        end_geofence_id: int | None = None,
     ) -> None:
         """
         Finalizes an existing drive in public.drives with calculated stats,
-        position bounds, and resolved end address.
+        position bounds, resolved end address, and matched end geofence.
         """
         if not self.pool:
             return
@@ -263,6 +306,7 @@ class TeslaMateRepository:
                 end_address_id = COALESCE($7, d.end_address_id),
                 start_position_id = COALESCE(d.start_position_id, ds.first_pos_id),
                 end_position_id = COALESCE($8, ds.last_pos_id),
+                end_geofence_id = COALESCE($9, d.end_geofence_id),
                 duration_min = GREATEST(0, ROUND(EXTRACT(EPOCH FROM ($2 - d.start_date)) / 60.0))::smallint,
                 speed_max = COALESCE(ds.speed_max, d.speed_max),
                 power_max = COALESCE(ds.power_max, d.power_max),
@@ -284,6 +328,7 @@ class TeslaMateRepository:
                     distance,
                     end_address_id,
                     end_position_id,
+                    end_geofence_id,
                 )
                 logger.info("Finalized drive #%d in TeslaMate DB.", drive_id)
         except Exception as e:
@@ -298,6 +343,7 @@ class TeslaMateRepository:
         start_ideal_range_km: Decimal | None = None,
         start_rated_range_km: Decimal | None = None,
         address_id: int | None = None,
+        geofence_id: int | None = None,
     ) -> int | None:
         """
         Initializes a new charging session in public.charging_processes.
@@ -310,8 +356,8 @@ class TeslaMateRepository:
             INSERT INTO public.charging_processes (
                 car_id, start_date, position_id,
                 start_battery_level, start_ideal_range_km, start_rated_range_km,
-                address_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                address_id, geofence_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id;
         """
         try:
@@ -325,6 +371,7 @@ class TeslaMateRepository:
                     start_ideal_range_km,
                     start_rated_range_km,
                     address_id,
+                    geofence_id,
                 )
                 return record["id"] if record else None
         except Exception as e:
@@ -335,24 +382,26 @@ class TeslaMateRepository:
         self,
         charging_process_id: int,
         address_id: int | None = None,
+        geofence_id: int | None = None,
     ) -> None:
         """
-        Links a resolved Nominatim address_id to an active charging_process.
+        Links a resolved Nominatim address_id and/or geofence_id to an active charging_process.
         """
-        if not self.pool or address_id is None:
+        if not self.pool or (address_id is None and geofence_id is None):
             return
 
         query = """
             UPDATE public.charging_processes
-            SET address_id = COALESCE($2, address_id)
+            SET address_id = COALESCE($2, address_id),
+                geofence_id = COALESCE($3, geofence_id)
             WHERE id = $1;
         """
         try:
             async with self.pool.acquire() as conn:
-                await conn.execute(query, charging_process_id, address_id)
+                await conn.execute(query, charging_process_id, address_id, geofence_id)
         except Exception as e:
             logger.error(
-                "Failed to update address for charging_process #%d: %s",
+                "Failed to update address/geofence for charging_process #%d: %s",
                 charging_process_id,
                 e,
             )
@@ -438,11 +487,13 @@ class TeslaMateRepository:
         end_rated_range_km: Decimal | None = None,
         charge_energy_added: Decimal | None = None,
         address_id: int | None = None,
+        geofence_id: int | None = None,
+        cost: Decimal | None = None,
     ) -> None:
         """
         Finalizes an active charging session in public.charging_processes,
-        aggregating duration, energy added, final SoC, and average outside temperature
-        from public.charges.
+        aggregating duration, energy added, final SoC, average outside temperature,
+        matched geofence_id, and calculated electricity cost.
         """
         if not self.pool:
             return
@@ -465,6 +516,8 @@ class TeslaMateRepository:
                 end_rated_range_km = COALESCE($5, cs.last_rated_range, cp.end_rated_range_km),
                 charge_energy_added = COALESCE($6, cs.max_energy_added, cp.charge_energy_added, 0.00),
                 address_id = COALESCE($7, cp.address_id),
+                geofence_id = COALESCE($8, cp.geofence_id),
+                cost = COALESCE($9, cp.cost),
                 duration_min = GREATEST(0, ROUND(EXTRACT(EPOCH FROM ($2 - cp.start_date)) / 60.0))::smallint,
                 outside_temp_avg = COALESCE(cs.outside_temp_avg, cp.outside_temp_avg)
             FROM charge_stats cs
@@ -481,6 +534,8 @@ class TeslaMateRepository:
                     end_rated_range_km,
                     charge_energy_added,
                     address_id,
+                    geofence_id,
+                    cost,
                 )
                 logger.info(
                     "Finalized charging_process #%d in DB.",

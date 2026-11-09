@@ -45,3 +45,9 @@ GEOCODING_REQUESTS = Counter(
     "Total reverse geocoding requests executed against Nominatim",
     ["status"],
 )
+
+GEOFENCE_MATCHES = Counter(
+    "fleetmate_geofence_matches_total",
+    "Total drive and charging locations matched against configured geofences",
+    ["context"],
+)

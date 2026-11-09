@@ -16,6 +16,7 @@ async def test_charging_session_lifecycle_and_kwh_integration():
     repo.start_charging_process.return_value = 9001
     repo.insert_charge.return_value = 1001
     repo.upsert_address.return_value = 301
+    repo.find_geofence.return_value = None
 
     geocoder = AsyncMock()
     geocoder.reverse_geocode.return_value = ResolvedAddress(
@@ -68,6 +69,7 @@ async def test_charging_session_lifecycle_and_kwh_integration():
     repo.update_charging_process_address.assert_awaited_once_with(
         charging_process_id=9001,
         address_id=301,
+        geofence_id=None,
     )
 
     # 2. Sample 30 minutes later at 8 kW -> ~4.00 kWh integrated
@@ -113,4 +115,6 @@ async def test_charging_session_lifecycle_and_kwh_integration():
         end_ideal_range_km=None,
         end_rated_range_km=Decimal("295.0"),
         charge_energy_added=Decimal("8.15"),
+        geofence_id=None,
+        cost=None,
     )

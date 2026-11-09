@@ -8,7 +8,8 @@ from typing import Any
 
 from fleetmate.config.settings import settings
 from fleetmate.geocoding.nominatim import NominatimGeocoder
-from fleetmate.metrics.prometheus import CHARGES_DETECTED, DRIVES_DETECTED
+from fleetmate.geofences.detector import GeofenceRecord, calculate_charging_cost
+from fleetmate.metrics.prometheus import CHARGES_DETECTED, DRIVES_DETECTED, GEOFENCE_MATCHES
 from fleetmate.storage.postgres import TeslaMateRepository
 from fleetmate.telemetry.models import VehicleTelemetryPoint
 
@@ -68,6 +69,7 @@ class StateMachineEngine:
         self.drive_start_odometer: float | None = None
         self.drive_start_geocoded: bool = False
         self.current_charging_process_id: int | None = None
+        self.current_charging_geofence: GeofenceRecord | None = None
         self.charge_start_time: datetime | None = None
         self.charge_energy_added_kwh: Decimal = Decimal("0.00")
         self.last_charge_sample_time: datetime | None = None
@@ -95,12 +97,18 @@ class StateMachineEngine:
         longitude: Decimal,
         position_id: int | None,
     ) -> None:
+        matched_gf = await self.repo.find_geofence(latitude, longitude)
+        geofence_id = matched_gf.id if matched_gf else None
+        if matched_gf:
+            GEOFENCE_MATCHES.labels(context="drive_start").inc()
+
         resolved = await self.geocoder.reverse_geocode(latitude, longitude)
         address_id = await self.repo.upsert_address(resolved) if resolved else None
         await self.repo.update_drive_start_location(
             drive_id=drive_id,
             address_id=address_id,
             position_id=position_id,
+            geofence_id=geofence_id,
         )
 
     async def _finalize_drive_with_geocoding(
@@ -115,7 +123,13 @@ class StateMachineEngine:
         end_position_id: int | None,
     ) -> None:
         end_address_id: int | None = None
+        end_geofence_id: int | None = None
         if coords is not None:
+            matched_gf = await self.repo.find_geofence(coords[0], coords[1])
+            if matched_gf:
+                end_geofence_id = matched_gf.id
+                GEOFENCE_MATCHES.labels(context="drive_end").inc()
+
             resolved = await self.geocoder.reverse_geocode(coords[0], coords[1])
             if resolved:
                 end_address_id = await self.repo.upsert_address(resolved)
@@ -129,6 +143,7 @@ class StateMachineEngine:
             start_odometer=start_odometer,
             end_address_id=end_address_id,
             end_position_id=end_position_id,
+            end_geofence_id=end_geofence_id,
         )
 
     async def _resolve_charging_address(
@@ -137,12 +152,19 @@ class StateMachineEngine:
         latitude: Decimal,
         longitude: Decimal,
     ) -> None:
+        matched_gf = await self.repo.find_geofence(latitude, longitude)
+        geofence_id = matched_gf.id if matched_gf else None
+        if matched_gf:
+            self.current_charging_geofence = matched_gf
+            GEOFENCE_MATCHES.labels(context="charging").inc()
+
         resolved = await self.geocoder.reverse_geocode(latitude, longitude)
-        if resolved:
-            address_id = await self.repo.upsert_address(resolved)
+        address_id = await self.repo.upsert_address(resolved) if resolved else None
+        if address_id is not None or geofence_id is not None:
             await self.repo.update_charging_process_address(
                 charging_process_id=charging_process_id,
                 address_id=address_id,
+                geofence_id=geofence_id,
             )
 
     def _compute_charger_power_kw(self, point: VehicleTelemetryPoint) -> int:
@@ -206,6 +228,20 @@ class StateMachineEngine:
             if point.charge_energy_added is not None
             else self.charge_energy_added_kwh
         )
+        duration_min = (
+            max(0, int(round((end_time - self.charge_start_time).total_seconds() / 60.0)))
+            if self.charge_start_time
+            else 0
+        )
+        matched_gf = self.current_charging_geofence
+        if matched_gf is None and self.last_coords is not None:
+            matched_gf = await self.repo.find_geofence(self.last_coords[0], self.last_coords[1])
+
+        calculated_cost = calculate_charging_cost(
+            geofence=matched_gf,
+            charge_energy_added_kwh=final_energy,
+            duration_min=duration_min,
+        )
         CHARGES_DETECTED.labels(event="end").inc()
         await self.repo.end_charging_process(
             charging_process_id=cp_id,
@@ -214,8 +250,11 @@ class StateMachineEngine:
             end_ideal_range_km=final_ideal,
             end_rated_range_km=final_rated,
             charge_energy_added=final_energy,
+            geofence_id=matched_gf.id if matched_gf else None,
+            cost=calculated_cost,
         )
         self.current_charging_process_id = None
+        self.current_charging_geofence = None
         self.charge_start_time = None
         self.charge_energy_added_kwh = Decimal("0.00")
         self.last_charge_sample_time = None

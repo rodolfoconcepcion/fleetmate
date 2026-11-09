@@ -54,6 +54,7 @@ async def test_state_engine_geocodes_drive_start_and_end():
     repo.start_drive.return_value = 42
     repo.insert_position.side_effect = [101, 102]
     repo.upsert_address.side_effect = [501, 502]
+    repo.find_geofence.return_value = None
 
     geocoder = AsyncMock(spec=NominatimGeocoder)
     geocoder.reverse_geocode.side_effect = [
@@ -96,6 +97,7 @@ async def test_state_engine_geocodes_drive_start_and_end():
         drive_id=42,
         address_id=501,
         position_id=101,
+        geofence_id=None,
     )
 
     # 2. Park vehicle (Drive End)
