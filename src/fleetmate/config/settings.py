@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     ha_discovery_enabled: bool = True
     ha_topic_prefix: str = "homeassistant"
 
-    # TeslaMate Database Integration (Direct High-Speed asyncpg)
+    # PostgreSQL Database Integration (Direct High-Speed asyncpg)
     postgres_host: str = Field(default="database", description="PostgreSQL host")
     postgres_port: int = Field(default=5432, description="PostgreSQL port")
     postgres_user: str = Field(default="teslamate", description="PostgreSQL username")
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     postgres_pool_max_size: int = 10
 
     # Ingestion & State Machine Engine Settings
-    car_id: int = Field(default=1, description="TeslaMate internal car ID")
+    car_id: int = Field(default=1, description="FleetMate internal car ID")
     vin: str = Field(default="", description="Vehicle VIN")
     min_drive_duration_seconds: int = 30
     drive_idle_timeout_seconds: int = 300

@@ -13,13 +13,13 @@ from fleetmate.telemetry.models import VehicleTelemetryPoint
 logger = logging.getLogger(__name__)
 
 
-class TeslaMateRepository:
+class FleetMateRepository:
     """
-    High-performance asyncpg repository directly inserting into TeslaMate PostgreSQL schema:
+    High-performance asyncpg repository directly inserting into the FleetMate PostgreSQL schema:
     - public.positions
     - public.drives
     - public.charges / charging_processes
-    - public.states
+    - public.addresses / geofences
     """
 
     def __init__(self, dsn: str | None = None) -> None:
@@ -31,7 +31,7 @@ class TeslaMateRepository:
 
     async def connect(self) -> None:
         logger.info(
-            "Connecting to TeslaMate PostgreSQL database at %s:%s...",
+            "Connecting to FleetMate PostgreSQL database at %s:%s...",
             settings.postgres_host,
             settings.postgres_port,
         )
@@ -41,12 +41,12 @@ class TeslaMateRepository:
             max_size=settings.postgres_pool_max_size,
             timeout=10.0,
         )
-        logger.info("TeslaMate PostgreSQL connection pool established successfully.")
+        logger.info("FleetMate PostgreSQL connection pool established successfully.")
 
     async def close(self) -> None:
         if self.pool:
             await self.pool.close()
-            logger.info("TeslaMate PostgreSQL connection pool closed.")
+            logger.info("FleetMate PostgreSQL connection pool closed.")
 
     async def insert_position(
         self,
@@ -104,7 +104,7 @@ class TeslaMateRepository:
                 )
                 return record["id"] if record else None
         except Exception as e:
-            logger.error("Failed to insert position into TeslaMate DB: %s", e)
+            logger.error("Failed to insert position into FleetMate DB: %s", e)
             return None
 
     async def upsert_address(self, addr: ResolvedAddress) -> int | None:
@@ -258,7 +258,7 @@ class TeslaMateRepository:
                 )
                 return record["id"] if record else None
         except Exception as e:
-            logger.error("Failed to start drive in TeslaMate DB: %s", e)
+            logger.error("Failed to start drive in FleetMate DB: %s", e)
             return None
 
     async def end_drive(
@@ -330,9 +330,9 @@ class TeslaMateRepository:
                     end_position_id,
                     end_geofence_id,
                 )
-                logger.info("Finalized drive #%d in TeslaMate DB.", drive_id)
+                logger.info("Finalized drive #%d in FleetMate DB.", drive_id)
         except Exception as e:
-            logger.error("Failed to end drive #%d in TeslaMate DB: %s", drive_id, e)
+            logger.error("Failed to end drive #%d in FleetMate DB: %s", drive_id, e)
 
     async def start_charging_process(
         self,
@@ -547,3 +547,7 @@ class TeslaMateRepository:
                 charging_process_id,
                 e,
             )
+
+
+# Backwards-compatible alias
+TeslaMateRepository = FleetMateRepository

@@ -8,14 +8,14 @@ from pydantic import BaseModel, Field
 class VehicleTelemetryPoint(BaseModel):
     """
     Standardized in-memory vehicle telemetry record decoded from Fleet Telemetry.
-    Maps directly to TeslaMate PostgreSQL schema: public.positions & public.drives.
+    Maps directly to the FleetMate PostgreSQL schema: public.positions & public.drives.
     """
 
     vin: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     latitude: Decimal | None = None
     longitude: Decimal | None = None
-    speed: int | None = None  # mph or km/h based on preference, stored in km/h for TeslaMate
+    speed: int | None = None  # Stored in km/h in PostgreSQL
     power: int | None = None  # kW
     odometer: float | None = None  # km
     ideal_battery_range_km: Decimal | None = None

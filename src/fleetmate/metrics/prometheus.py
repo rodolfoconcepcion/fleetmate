@@ -8,7 +8,7 @@ MESSAGES_RECEIVED = Counter(
 
 POSITIONS_INSERTED = Counter(
     "fleetmate_positions_inserted_total",
-    "Total positions written directly to TeslaMate PostgreSQL",
+    "Total positions written directly to FleetMate PostgreSQL",
     ["status"],
 )
 

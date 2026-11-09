@@ -9,7 +9,7 @@ from prometheus_client import start_http_server
 from fleetmate.config.settings import settings
 from fleetmate.mqtt.consumer import FleetMQTTConsumer
 from fleetmate.state.engine import StateMachineEngine
-from fleetmate.storage.postgres import TeslaMateRepository
+from fleetmate.storage.postgres import FleetMateRepository
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -26,7 +26,7 @@ async def main_async() -> None:
     start_http_server(settings.metrics_port)
 
     # 2. Initialize PostgreSQL repository
-    repo = TeslaMateRepository()
+    repo = FleetMateRepository()
     await repo.connect()
 
     # 3. Initialize State Machine Engine

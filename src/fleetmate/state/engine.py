@@ -10,7 +10,7 @@ from fleetmate.config.settings import settings
 from fleetmate.geocoding.nominatim import NominatimGeocoder
 from fleetmate.geofences.detector import GeofenceRecord, calculate_charging_cost
 from fleetmate.metrics.prometheus import CHARGES_DETECTED, DRIVES_DETECTED, GEOFENCE_MATCHES
-from fleetmate.storage.postgres import TeslaMateRepository
+from fleetmate.storage.postgres import FleetMateRepository
 from fleetmate.telemetry.models import VehicleTelemetryPoint
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class StateMachineEngine:
 
     def __init__(
         self,
-        repo: TeslaMateRepository,
+        repo: FleetMateRepository,
         car_id: int = settings.car_id,
         geocoder: NominatimGeocoder | None = None,
     ) -> None:
