@@ -28,9 +28,29 @@ class Settings(BaseSettings):
     )
     mqtt_client_id: str = "fleetmate-bridge"
 
-    # Home Assistant MQTT Publishing (Optional Live Discovery)
+    # Home Assistant & Normalized State MQTT Publishing
+    mqtt_publish_enabled: bool = Field(
+        default=True,
+        description="Publish normalized vehicle state topics and Home Assistant MQTT discovery",
+    )
+    mqtt_publish_prefix: str = Field(
+        default="fleetmate",
+        description="Base MQTT topic prefix for published vehicle state topics",
+    )
     ha_discovery_enabled: bool = True
     ha_topic_prefix: str = "homeassistant"
+    public_url: str = Field(
+        default="http://localhost:3100/",
+        description="Public Web UI / Grafana URL advertised in Home Assistant MQTT Discovery",
+    )
+    vehicle_name: str = Field(
+        default="FleetMate Vehicle",
+        description="Friendly vehicle name advertised in MQTT state and Home Assistant Discovery",
+    )
+    vehicle_model: str = Field(
+        default="Model 3",
+        description="Vehicle model string advertised in Home Assistant MQTT Discovery",
+    )
 
     # PostgreSQL Database Integration (Direct High-Speed asyncpg)
     postgres_host: str = Field(default="database", description="PostgreSQL host")
@@ -65,6 +85,27 @@ class Settings(BaseSettings):
         default=1.1,
         description="Minimum delay in seconds between Nominatim API requests",
     )
+
+    # Web Portal & Tesla Fleet API Command Executor
+    web_enabled: bool = Field(default=True, description="Enable FleetMate Web UI & API server")
+    grafana_url: str = Field(
+        default="http://localhost:3100",
+        description="Companion Grafana URL linked from the FleetMate Web UI",
+    )
+    fleet_proxy_url: str = Field(
+        default="https://fleetmate-http-proxy:4445",
+        description="Tesla Vehicle Command HTTP proxy URL",
+    )
+    fleet_token_file: str = Field(
+        default="/app/data/token.json",
+        description="Path to Tesla Fleet OAuth token JSON",
+    )
+    fleet_auth_url: str = Field(
+        default="https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token",
+        description="Tesla Fleet OAuth token refresh URL",
+    )
+    fleet_client_id: str = Field(default="", description="Tesla Fleet API OAuth Client ID")
+    fleet_client_secret: str = Field(default="", description="Tesla Fleet API OAuth Client Secret")
 
 
 settings = Settings()

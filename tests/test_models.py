@@ -59,3 +59,57 @@ def test_vehicle_telemetry_handles_missing_fields():
     assert point.speed is None
     assert point.tpms_pressure_fl is None
     assert point.is_climate_on is None
+
+
+def test_vehicle_telemetry_normalizes_gear_and_invalid_strings():
+    point_park = VehicleTelemetryPoint.from_fleet_telemetry_json(
+        vin="TESTVIN1234567890",
+        raw_data={
+            "Gear": "ShiftStateP",
+            "ChargeState": "<invalid>",
+            "ClimateKeeperMode": "",
+            "Version": "2026.38.5",
+        },
+    )
+    assert point_park.gear == "P"
+    assert point_park.charge_state is None
+    assert point_park.climate_keeper_mode is None
+    assert point_park.version == "2026.38.5"
+
+    point_invalid_gear = VehicleTelemetryPoint.from_fleet_telemetry_json(
+        vin="TESTVIN1234567890",
+        raw_data={"Gear": "<invalid>", "FastChargerPresent": "<invalid>"},
+    )
+    assert point_invalid_gear.gear is None
+    assert point_invalid_gear.fast_charger_present is None
+
+
+def test_vehicle_telemetry_parses_security_and_hvac_protobuf_enums():
+    point = VehicleTelemetryPoint.from_fleet_telemetry_json(
+        vin="TESTVIN1234567890",
+        raw_data={
+            "Locked": True,
+            "SentryMode": "SentryModeStateArmed",
+            "FdWindow": "WindowStateClosed",
+            "FpWindow": "WindowStateOpened",
+            "HvacPower": "HvacPowerStateOff",
+            "ClimateKeeperMode": "ClimateKeeperModeStateOff",
+        },
+    )
+    assert point.locked is True
+    assert point.sentry_mode is True
+    assert point.driver_front_window_open is False
+    assert point.passenger_front_window_open is True
+    assert point.windows_open is True
+    assert point.is_climate_on is False
+    assert point.climate_keeper_mode == "off"
+
+    point_on = VehicleTelemetryPoint.from_fleet_telemetry_json(
+        vin="TESTVIN1234567890",
+        raw_data={
+            "HvacPower": "HvacPowerStateOn",
+            "ClimateKeeperMode": "ClimateKeeperModeStateUnknown",
+        },
+    )
+    assert point_on.is_climate_on is True
+    assert point_on.climate_keeper_mode is None
