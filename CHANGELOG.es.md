@@ -4,6 +4,12 @@
 
 ---
 
+## [0.6.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.5.0...fleetmate-v0.6.0) (2026-11-19)
+
+### Características (Features)
+
+* **bridge:** autodescubrimiento y comandos MQTT para Home Assistant, portal web GeoLoc y detección de reposo (`Asleep`) por eventos `connectivity` sin costo de API ([#24](https://github.com/rodolfoconcepcion/fleetmate/issues/24)) ([5843495](https://github.com/rodolfoconcepcion/fleetmate/commit/5843495da50552459666acd6a452636a5d1504c5))
+
 <!-- coderabbit-ai-generated:v1 -->
 
 <!-- coderabbit-ai-generated-section:v1:02b71d34e08d5cdf831abc314ae413fa78e304e30ca8cfa08907e7fba050bf25 -->
