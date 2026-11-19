@@ -73,7 +73,11 @@ class FleetMateWebServer:
                 if not task.done():
                     task.cancel()
             if self._client_tasks:
-                await asyncio.gather(*self._client_tasks, return_exceptions=True)
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(
+                        asyncio.gather(*self._client_tasks, return_exceptions=True),
+                        timeout=5.0,
+                    )
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self._server.wait_closed(), timeout=5.0)
             self._server = None
@@ -111,7 +115,7 @@ class FleetMateWebServer:
                 self._client_tasks.discard(task)
             writer.close()
             with contextlib.suppress(Exception):
-                await writer.wait_closed()
+                await asyncio.wait_for(writer.wait_closed(), timeout=2.0)
 
     @staticmethod
     async def _read_http_request(

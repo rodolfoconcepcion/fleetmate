@@ -38,7 +38,7 @@ def _make_server() -> tuple[FleetMateWebServer, MagicMock, MagicMock]:
         return_value=CommandResult(ok=True, action="flash_lights", message="OK", http_status=200)
     )
 
-    cfg = Settings(car_id=1, grafana_url="https://grafana.example.invalid")
+    cfg = Settings(car_id=1, grafana_url="https://grafana.example.invalid", web_api_token=None)
     server = FleetMateWebServer(repo=repo, engine=engine, command_executor=executor, config=cfg)
     return server, repo, executor
 

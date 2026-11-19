@@ -35,7 +35,7 @@ async def test_connectivity_disconnect_marks_asleep_after_debounce():
 
     await consumer._handle_connectivity(vin, {"NetworkInterface": "wifi", "Status": "DISCONNECTED"})
     task = consumer._sleep_tasks[vin]
-    await task
+    await asyncio.gather(task)
 
     assert engine.current_state == VehicleState.ASLEEP
     publisher.publish_state_only.assert_awaited()

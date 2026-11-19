@@ -76,20 +76,21 @@ async def main_async() -> None:
             loop.add_signal_handler(sig, _signal_handler)
 
     # 6. Start Web Portal & MQTT consumer loop
+    consumer_task = asyncio.create_task(consumer.start())
     try:
         if web_server is not None:
             await web_server.start()
-        consumer_task = asyncio.create_task(consumer.start())
 
         await stop_event.wait()
-
+    finally:
         logger.info("Cleaning up resources...")
         consumer_task.cancel()
         await asyncio.gather(consumer_task, return_exceptions=True)
-    finally:
         if web_server is not None:
-            with contextlib.suppress(Exception):
+            try:
                 await web_server.stop()
+            except Exception as err:
+                logger.warning("Web portal shutdown error: %s", err)
         await repo.close()
         logger.info("FleetMate Bridge shutdown complete.")
 

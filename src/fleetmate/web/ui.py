@@ -386,7 +386,18 @@ PORTAL_HTML = """<!DOCTYPE html>
     }
 
     async function api(path, opts = {}) {
-      const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+      const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+      const storedToken = localStorage.getItem('fleetmate_api_token');
+      if (storedToken) headers['Authorization'] = 'Bearer ' + storedToken;
+      let res = await fetch(path, { ...opts, headers });
+      if (res.status === 401) {
+        const entered = window.prompt('Enter FleetMate API Bearer token:');
+        if (entered) {
+          localStorage.setItem('fleetmate_api_token', entered.trim());
+          headers['Authorization'] = 'Bearer ' + entered.trim();
+          res = await fetch(path, { ...opts, headers });
+        }
+      }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.message || ('HTTP ' + res.status));
       return data;

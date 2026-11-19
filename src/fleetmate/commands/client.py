@@ -111,8 +111,7 @@ class TeslaCommandExecutor:
         self.proxy_verify_ssl: bool | str = proxy_ca_cert if proxy_ca_cert else proxy_verify_ssl
         if not self.auth_url.startswith("https://"):
             raise ValueError("Tesla OAuth auth_url must use https://")
-        is_local_proxy = self.proxy_url.startswith(("http://localhost", "http://127.0.0.1"))
-        if not self.proxy_url.startswith("https://") and not is_local_proxy:
+        if not self.proxy_url.startswith("https://"):
             raise ValueError("Tesla HTTP proxy URL must use https://")
         self._token_lock = asyncio.Lock()
         self._cached_token: tuple[str, int] | None = None
