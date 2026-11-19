@@ -1,14 +1,14 @@
 [project]
 name = "fleetmate"
 version = "0.5.0"
-description = "High-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine & bridge for TeslaMate and Home Assistant"
+description = "High-speed, zero-cost Tesla Fleet Telemetry mTLS streaming engine & bridge for FleetMate and Home Assistant"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
     { name = "Rodolfo Concepcion" }
 ]
-keywords = ["tesla", "teslamate", "fleet-telemetry", "mqtt", "home-assistant", "mtls", "streaming"]
+keywords = ["tesla", "fleetmate", "fleet-telemetry", "mqtt", "home-assistant", "mtls", "streaming"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -68,4 +68,5 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]

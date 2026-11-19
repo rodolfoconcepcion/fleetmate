@@ -40,12 +40,12 @@ Para mantener un alto estándar de calidad y enfoque (según la [Guía de Buenas
   * **Independencia Total de TeslaMate**: Plan estratégico para descontinuar la dependencia de TeslaMate mediante un modelo de datos propio, motor de almacenamiento nativo y paneles de control dedicados.
   * Stack completo listo para usar en Docker Compose (receptor mTLS, MQTT, base de datos nativa y Grafana).
   * Sincronización de estados retrocompatible y herramienta de migración en 1 clic de históricos de TeslaMate.
-  * Autodescubrimiento MQTT para Home Assistant y seguimiento de sensores en vivo.
+  * Autodescubrimiento MQTT para Home Assistant, seguimiento de sensores en vivo, detección de estado `Online` / `Asleep` sin costo de API vía eventos `connectivity` y puente opcional de comandos MQTT mediante el proxy HTTP oficial `vehicle-command` de Tesla.
+  * Portal Web integrado GeoLoc & Places (`:8089`) para gestión interactiva de geocercas y vistas de ubicación en vivo.
   * Arquitectura local, privada y de coste cero para entornos homelab.
 * **❌ Fuera del Alcance (No-Objetivos)**:
-  * **Control Remoto del Vehículo**: FleetMate es estrictamente un motor de lectura de telemetría; no envía comandos al carro (cerraduras, clima, bocina o encendido remoto).
   * **Plataforma SaaS en la Nube**: FleetMate es software 100% autoalojado (*self-hosted*); no cuenta con suscripciones en la nube, proxies cerrados ni monetización de datos.
-  * **Ingeniería Inversa de Protocolos Propietarios**: FleetMate opera exclusivamente sobre los protocolos oficiales documentados de Tesla Fleet Telemetry y WebSockets mTLS estándares.
+  * **Ingeniería Inversa de Protocolos Propietarios**: FleetMate opera exclusivamente sobre los protocolos oficiales documentados de Tesla Fleet Telemetry y Vehicle Command sobre mTLS estándar.
 
 ---
 

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Coroutine
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
@@ -10,6 +10,7 @@ from fleetmate.config.settings import settings
 from fleetmate.geocoding.nominatim import NominatimGeocoder
 from fleetmate.geofences.detector import GeofenceRecord, calculate_charging_cost
 from fleetmate.metrics.prometheus import CHARGES_DETECTED, DRIVES_DETECTED, GEOFENCE_MATCHES
+from fleetmate.mqtt.publisher import StateMQTTPublisher
 from fleetmate.storage.postgres import FleetMateRepository
 from fleetmate.telemetry.models import VehicleTelemetryPoint
 
@@ -59,11 +60,14 @@ class StateMachineEngine:
         repo: FleetMateRepository,
         car_id: int = settings.car_id,
         geocoder: NominatimGeocoder | None = None,
+        publisher: StateMQTTPublisher | None = None,
     ) -> None:
         self.repo = repo
         self.car_id = car_id
         self.geocoder = geocoder or NominatimGeocoder()
+        self.publisher = publisher
         self.current_state: VehicleState = VehicleState.ONLINE
+        self.current_geofence_name: str | None = None
         self.current_drive_id: int | None = None
         self.drive_start_time: datetime | None = None
         self.drive_start_odometer: float | None = None
@@ -99,6 +103,7 @@ class StateMachineEngine:
     ) -> None:
         matched_gf = await self.repo.find_geofence(latitude, longitude)
         geofence_id = matched_gf.id if matched_gf else None
+        self.current_geofence_name = matched_gf.name if matched_gf else None
         if matched_gf:
             GEOFENCE_MATCHES.labels(context="drive_start").inc()
 
@@ -126,6 +131,7 @@ class StateMachineEngine:
         end_geofence_id: int | None = None
         if coords is not None:
             matched_gf = await self.repo.find_geofence(coords[0], coords[1])
+            self.current_geofence_name = matched_gf.name if matched_gf else None
             if matched_gf:
                 end_geofence_id = matched_gf.id
                 GEOFENCE_MATCHES.labels(context="drive_end").inc()
@@ -154,6 +160,7 @@ class StateMachineEngine:
     ) -> None:
         matched_gf = await self.repo.find_geofence(latitude, longitude)
         geofence_id = matched_gf.id if matched_gf else None
+        self.current_geofence_name = matched_gf.name if matched_gf else None
         if matched_gf:
             self.current_charging_geofence = matched_gf
             GEOFENCE_MATCHES.labels(context="charging").inc()
@@ -262,14 +269,40 @@ class StateMachineEngine:
         self.last_charger_voltage = None
         self.last_charger_current = None
 
+    async def mark_asleep(self, timestamp: datetime | None = None) -> None:
+        """Transition from ONLINE to ASLEEP when telemetry connectivity drops."""
+        if self.current_state != VehicleState.ONLINE:
+            return
+        logger.info("😴 [VEHICLE ASLEEP] Telemetry disconnected; marking vehicle asleep.")
+        self.current_state = VehicleState.ASLEEP
+        if self.publisher is not None:
+            await self.publisher.publish_state_only(
+                VehicleState.ASLEEP.value, timestamp or datetime.now(UTC)
+            )
+
+    async def mark_online(self, timestamp: datetime | None = None) -> None:
+        """Transition from ASLEEP back to ONLINE when telemetry reconnects."""
+        if self.current_state != VehicleState.ASLEEP:
+            return
+        logger.info("🌞 [VEHICLE ONLINE] Telemetry connected; marking vehicle online.")
+        self.current_state = VehicleState.ONLINE
+        if self.publisher is not None:
+            await self.publisher.publish_state_only(
+                VehicleState.ONLINE.value, timestamp or datetime.now(UTC)
+            )
+
     async def process_point(self, point: VehicleTelemetryPoint) -> None:
         """
         Processes a single incoming telemetry point, updates state machine,
         and coordinates persistence into PostgreSQL.
         """
         now = point.timestamp
+        if self.current_state == VehicleState.ASLEEP:
+            self.current_state = VehicleState.ONLINE
         if point.latitude is not None and point.longitude is not None:
             self.last_coords = (point.latitude, point.longitude)
+            matched_gf = await self.repo.find_geofence(point.latitude, point.longitude)
+            self.current_geofence_name = matched_gf.name if matched_gf else ""
         if point.battery_level is not None:
             self.last_battery_level = point.battery_level
         if point.ideal_battery_range_km is not None:
@@ -488,3 +521,19 @@ class StateMachineEngine:
                 self.current_state = VehicleState.ONLINE
 
         self.last_point = point
+        if self.publisher is not None:
+            await self.publisher.publish_point(
+                point=point,
+                vehicle_state=self.current_state.value,
+                geofence_name=self.current_geofence_name,
+                charger_power_kw=(
+                    self.last_charger_power_kw
+                    if self.current_state == VehicleState.CHARGING
+                    else point.charger_power
+                ),
+                charge_energy_added=(
+                    self.charge_energy_added_kwh
+                    if self.current_state == VehicleState.CHARGING
+                    else point.charge_energy_added
+                ),
+            )
