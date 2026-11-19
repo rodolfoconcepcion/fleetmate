@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Any
 
 import asyncpg
 
@@ -547,6 +548,305 @@ class FleetMateRepository:
                 charging_process_id,
                 e,
             )
+
+    @staticmethod
+    def _serialize_row(record: asyncpg.Record) -> dict[str, Any]:
+        """Convert an asyncpg Record into a JSON-serializable dictionary."""
+        out: dict[str, Any] = {}
+        for k, v in dict(record).items():
+            if isinstance(v, Decimal):
+                out[k] = float(v)
+            elif isinstance(v, datetime):
+                out[k] = v.isoformat() + ("Z" if v.tzinfo is None else "")
+            else:
+                out[k] = v
+        return out
+
+    async def list_geofences(self) -> list[dict[str, Any]]:
+        """List all configured geo-fences ordered by name."""
+        if not self.pool:
+            return []
+        query = """
+            SELECT id, name, latitude, longitude, radius,
+                   cost_per_unit, session_fee, billing_type::text AS billing_type,
+                   inserted_at, updated_at
+            FROM public.geofences
+            ORDER BY name ASC, id ASC;
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query)
+        return [self._serialize_row(r) for r in rows]
+
+    async def create_geofence(
+        self,
+        name: str,
+        latitude: float,
+        longitude: float,
+        radius: int = 25,
+        cost_per_unit: float | None = None,
+        session_fee: float | None = None,
+        billing_type: str = "per_kwh",
+    ) -> dict[str, Any]:
+        """Insert a new geo-fence into public.geofences."""
+        if not self.pool:
+            raise RuntimeError("Database pool is not initialized")
+        bt = billing_type if billing_type in ("per_kwh", "per_minute") else "per_kwh"
+        query = """
+            INSERT INTO public.geofences (
+                name, latitude, longitude, radius,
+                cost_per_unit, session_fee, billing_type,
+                inserted_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7::billing_type, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC')
+            RETURNING id, name, latitude, longitude, radius,
+                      cost_per_unit, session_fee, billing_type::text AS billing_type,
+                      inserted_at, updated_at;
+        """
+        async with self.pool.acquire(timeout=10.0) as conn:
+            row = await conn.fetchrow(
+                query,
+                name.strip(),
+                round(latitude, 6),
+                round(longitude, 6),
+                max(5, min(5000, int(radius))),
+                Decimal(str(cost_per_unit)) if cost_per_unit is not None else None,
+                Decimal(str(session_fee)) if session_fee is not None else None,
+                bt,
+                timeout=10.0,
+            )
+        if row is None:
+            raise RuntimeError("Failed to create geofence")
+        return self._serialize_row(row)
+
+    async def update_geofence(
+        self,
+        geofence_id: int,
+        name: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
+        radius: int | None = None,
+        cost_per_unit: float | None = None,
+        session_fee: float | None = None,
+        billing_type: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Update an existing geo-fence by ID and return the updated row."""
+        if not self.pool:
+            raise RuntimeError("Database pool is not initialized")
+        bt = billing_type if billing_type in ("per_kwh", "per_minute") else None
+        query = """
+            UPDATE public.geofences
+            SET name = COALESCE($2, name),
+                latitude = COALESCE($3, latitude),
+                longitude = COALESCE($4, longitude),
+                radius = COALESCE($5, radius),
+                cost_per_unit = COALESCE($6, cost_per_unit),
+                session_fee = COALESCE($7, session_fee),
+                billing_type = COALESCE($8::billing_type, billing_type),
+                updated_at = NOW() AT TIME ZONE 'UTC'
+            WHERE id = $1
+            RETURNING id, name, latitude, longitude, radius,
+                      cost_per_unit, session_fee, billing_type::text AS billing_type,
+                      inserted_at, updated_at;
+        """
+        async with self.pool.acquire(timeout=10.0) as conn:
+            row = await conn.fetchrow(
+                query,
+                geofence_id,
+                name.strip() if name is not None else None,
+                round(latitude, 6) if latitude is not None else None,
+                round(longitude, 6) if longitude is not None else None,
+                max(5, min(5000, int(radius))) if radius is not None else None,
+                Decimal(str(cost_per_unit)) if cost_per_unit is not None else None,
+                Decimal(str(session_fee)) if session_fee is not None else None,
+                bt,
+                timeout=10.0,
+            )
+        return self._serialize_row(row) if row else None
+
+    async def delete_geofence(self, geofence_id: int) -> bool:
+        """Delete a geo-fence by ID after unlinking references on drives/charges."""
+        if not self.pool:
+            raise RuntimeError("Database pool is not initialized")
+        async with self.pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                "UPDATE public.drives SET start_geofence_id = NULL WHERE start_geofence_id = $1;",
+                geofence_id,
+            )
+            await conn.execute(
+                "UPDATE public.drives SET end_geofence_id = NULL WHERE end_geofence_id = $1;",
+                geofence_id,
+            )
+            await conn.execute(
+                "UPDATE public.charging_processes SET geofence_id = NULL WHERE geofence_id = $1;",
+                geofence_id,
+            )
+            result = await conn.execute(
+                "DELETE FROM public.geofences WHERE id = $1;",
+                geofence_id,
+            )
+        return bool(str(result).endswith("1"))
+
+    async def list_places(self, limit: int = 200) -> list[dict[str, Any]]:
+        """List visited places with drive & charge visit counts and latest activity."""
+        if not self.pool:
+            return []
+        query = """
+            WITH drive_visits AS (
+                SELECT addr_id, COUNT(*) AS visits, MAX(dt) AS last_visit
+                FROM (
+                    SELECT start_address_id AS addr_id, start_date AS dt FROM public.drives WHERE start_address_id IS NOT NULL
+                    UNION ALL
+                    SELECT end_address_id AS addr_id, COALESCE(end_date, start_date) AS dt FROM public.drives WHERE end_address_id IS NOT NULL
+                ) d
+                GROUP BY addr_id
+            ),
+            charge_visits AS (
+                SELECT address_id AS addr_id, COUNT(*) AS charges,
+                       COALESCE(SUM(charge_energy_added), 0) AS total_kwh,
+                       MAX(COALESCE(end_date, start_date)) AS last_charge
+                FROM public.charging_processes
+                WHERE address_id IS NOT NULL
+                GROUP BY address_id
+            )
+            SELECT a.id, a.display_name, a.name, a.road, a.city, a.state, a.country,
+                   a.latitude, a.longitude,
+                   COALESCE(dv.visits, 0)::int AS drive_visits,
+                   COALESCE(cv.charges, 0)::int AS charge_visits,
+                   COALESCE(cv.total_kwh, 0) AS total_kwh,
+                   GREATEST(dv.last_visit, cv.last_charge, a.updated_at) AS last_visited
+            FROM public.addresses a
+            LEFT JOIN drive_visits dv ON dv.addr_id = a.id
+            LEFT JOIN charge_visits cv ON cv.addr_id = a.id
+            WHERE a.latitude IS NOT NULL AND a.longitude IS NOT NULL
+            ORDER BY (COALESCE(dv.visits, 0) + COALESCE(cv.charges, 0)) DESC, last_visited DESC NULLS LAST
+            LIMIT $1;
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, max(1, min(500, int(limit))))
+        return [self._serialize_row(r) for r in rows]
+
+    async def get_live_snapshot(self, car_id: int) -> dict[str, Any]:
+        """Return car metadata, latest position, totals, and matched geofence."""
+        if not self.pool:
+            return {"car": None, "position": None, "counts": {}, "matched_geofence": None}
+        async with self.pool.acquire() as conn:
+            car_row = await conn.fetchrow(
+                "SELECT id, name, model, exterior_color, trim_badging FROM public.cars WHERE id = $1;",
+                car_id,
+            )
+            pos_row = await conn.fetchrow(
+                """
+                SELECT id, date, latitude, longitude, speed, power, odometer,
+                       ideal_battery_range_km, rated_battery_range_km, battery_level,
+                       usable_battery_level, outside_temp, inside_temp, elevation, tpms_pressure_fl,
+                       tpms_pressure_fr, tpms_pressure_rl, tpms_pressure_rr
+                FROM public.positions
+                WHERE car_id = $1
+                ORDER BY date DESC, id DESC
+                LIMIT 1;
+                """,
+                car_id,
+            )
+            counts_row = await conn.fetchrow(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM public.drives WHERE car_id = $1) AS drives_count,
+                    (SELECT COUNT(*) FROM public.charging_processes WHERE car_id = $1) AS charges_count,
+                    (SELECT COUNT(*) FROM public.geofences) AS geofences_count,
+                    (SELECT COUNT(*) FROM public.addresses) AS places_count,
+                    (SELECT COALESCE(SUM(distance), 0) FROM public.drives WHERE car_id = $1) AS total_km,
+                    (SELECT COALESCE(SUM(charge_energy_added), 0) FROM public.charging_processes WHERE car_id = $1) AS total_kwh,
+                    (SELECT COALESCE(SUM(cost), 0) FROM public.charging_processes WHERE car_id = $1) AS total_cost;
+                """,
+                car_id,
+            )
+        position = self._serialize_row(pos_row) if pos_row else None
+        matched_geofence = None
+        if position and position.get("latitude") is not None and position.get("longitude") is not None:
+            gf = await self.find_geofence(
+                Decimal(str(position["latitude"])), Decimal(str(position["longitude"]))
+            )
+            if gf:
+                matched_geofence = {"id": gf.id, "name": gf.name}
+        return {
+            "car": self._serialize_row(car_row) if car_row else None,
+            "position": position,
+            "counts": self._serialize_row(counts_row) if counts_row else {},
+            "matched_geofence": matched_geofence,
+        }
+
+    async def list_recent_drives(self, car_id: int, limit: int = 25) -> list[dict[str, Any]]:
+        """List recent completed or active drives with start/end locations."""
+        if not self.pool:
+            return []
+        query = """
+            SELECT d.id, d.start_date, d.end_date, d.distance, d.duration_min,
+                   d.speed_max, d.power_max, d.start_km, d.end_km,
+                   d.outside_temp_avg, d.inside_temp_avg,
+                   COALESCE(sg.name, sa.name, sa.display_name, 'Unknown') AS start_location,
+                   COALESCE(eg.name, ea.name, ea.display_name, CASE WHEN d.end_date IS NULL THEN 'In Progress' ELSE 'Unknown' END) AS end_location,
+                   sp.latitude AS start_lat, sp.longitude AS start_lon,
+                   ep.latitude AS end_lat, ep.longitude AS end_lon
+            FROM public.drives d
+            LEFT JOIN public.geofences sg ON sg.id = d.start_geofence_id
+            LEFT JOIN public.geofences eg ON eg.id = d.end_geofence_id
+            LEFT JOIN public.addresses sa ON sa.id = d.start_address_id
+            LEFT JOIN public.addresses ea ON ea.id = d.end_address_id
+            LEFT JOIN public.positions sp ON sp.id = d.start_position_id
+            LEFT JOIN public.positions ep ON ep.id = d.end_position_id
+            WHERE d.car_id = $1
+            ORDER BY d.start_date DESC
+            LIMIT $2;
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, car_id, max(1, min(100, int(limit))))
+        return [self._serialize_row(r) for r in rows]
+
+    async def list_recent_charges(self, car_id: int, limit: int = 25) -> list[dict[str, Any]]:
+        """List recent charging sessions with location, energy, and cost."""
+        if not self.pool:
+            return []
+        query = """
+            SELECT cp.id, cp.start_date, cp.end_date, cp.charge_energy_added,
+                   cp.duration_min, cp.cost, cp.start_battery_level, cp.end_battery_level,
+                   cp.outside_temp_avg,
+                   COALESCE(g.name, a.name, a.display_name, 'Unknown') AS location,
+                   p.latitude, p.longitude
+            FROM public.charging_processes cp
+            LEFT JOIN public.geofences g ON g.id = cp.geofence_id
+            LEFT JOIN public.addresses a ON a.id = cp.address_id
+            LEFT JOIN public.positions p ON p.id = cp.position_id
+            WHERE cp.car_id = $1
+            ORDER BY cp.start_date DESC
+            LIMIT $2;
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, car_id, max(1, min(100, int(limit))))
+        return [self._serialize_row(r) for r in rows]
+
+    async def list_recent_positions(self, car_id: int, limit: int = 250) -> list[dict[str, Any]]:
+        """List GPS coordinates for the latest drive for clean road-trail plotting."""
+        if not self.pool:
+            return []
+        query = """
+            WITH latest_drive AS (
+                SELECT id FROM public.drives
+                WHERE car_id = $1
+                ORDER BY start_date DESC
+                LIMIT 1
+            )
+            SELECT id, drive_id, date, latitude, longitude, speed, power, battery_level
+            FROM public.positions
+            WHERE car_id = $1
+              AND latitude IS NOT NULL
+              AND longitude IS NOT NULL
+              AND drive_id = (SELECT id FROM latest_drive)
+            ORDER BY date DESC, id DESC
+            LIMIT $2;
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, car_id, max(1, min(1000, int(limit))))
+        return [self._serialize_row(r) for r in reversed(rows)]
 
 
 # Backwards-compatible alias

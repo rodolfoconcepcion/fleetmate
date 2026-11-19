@@ -6,8 +6,10 @@ import sys
 
 from prometheus_client import start_http_server
 
+from fleetmate.commands.client import TeslaCommandExecutor
 from fleetmate.config.settings import settings
 from fleetmate.mqtt.consumer import FleetMQTTConsumer
+from fleetmate.mqtt.publisher import StateMQTTPublisher
 from fleetmate.state.engine import StateMachineEngine
 from fleetmate.storage.postgres import FleetMateRepository
 
@@ -29,11 +31,36 @@ async def main_async() -> None:
     repo = FleetMateRepository()
     await repo.connect()
 
-    # 3. Initialize State Machine Engine
-    engine = StateMachineEngine(repo=repo, car_id=settings.car_id)
+    # 3. Initialize State Machine Engine & MQTT Publisher
+    from fleetmate.web.server import FleetMateWebServer
 
-    # 4. Initialize MQTT Consumer
-    consumer = FleetMQTTConsumer(engine=engine)
+    command_executor = (
+        TeslaCommandExecutor(
+            vin=settings.vin,
+            proxy_url=settings.fleet_proxy_url,
+            token_file=settings.fleet_token_file,
+            auth_url=settings.fleet_auth_url,
+            client_id=settings.fleet_client_id,
+            client_secret=settings.fleet_client_secret,
+        )
+        if settings.vin and settings.fleet_proxy_url
+        else None
+    )
+
+    publisher = StateMQTTPublisher(car_id=settings.car_id)
+    engine = StateMachineEngine(repo=repo, car_id=settings.car_id, publisher=publisher)
+
+    # 4. Initialize MQTT Consumer & Web Portal
+    consumer = FleetMQTTConsumer(
+        engine=engine, publisher=publisher, command_executor=command_executor
+    )
+    web_server = (
+        FleetMateWebServer(
+            repo=repo, engine=engine, command_executor=command_executor, config=settings
+        )
+        if settings.web_enabled
+        else None
+    )
 
     # 5. Graceful shutdown handler
     stop_event = asyncio.Event()
@@ -48,17 +75,24 @@ async def main_async() -> None:
         with contextlib.suppress(NotImplementedError):
             loop.add_signal_handler(sig, _signal_handler)
 
-    # 6. Run consumer loop
+    # 6. Start Web Portal & MQTT consumer loop
     consumer_task = asyncio.create_task(consumer.start())
+    try:
+        if web_server is not None:
+            await web_server.start()
 
-    await stop_event.wait()
-
-    # Cleanup
-    logger.info("Cleaning up resources...")
-    consumer_task.cancel()
-    await asyncio.gather(consumer_task, return_exceptions=True)
-    await repo.close()
-    logger.info("FleetMate Bridge shutdown complete.")
+        await stop_event.wait()
+    finally:
+        logger.info("Cleaning up resources...")
+        consumer_task.cancel()
+        await asyncio.gather(consumer_task, return_exceptions=True)
+        if web_server is not None:
+            try:
+                await web_server.stop()
+            except Exception as err:
+                logger.warning("Web portal shutdown error: %s", err)
+        await repo.close()
+        logger.info("FleetMate Bridge shutdown complete.")
 
 
 def run() -> None:

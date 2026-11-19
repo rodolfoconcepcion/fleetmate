@@ -62,7 +62,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
   docker-publish:
-    name: Build & Publish Container
+    name: Publish Container (main / tags only)
     needs: [lint-and-test, security-scan]
     if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
