@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -98,6 +99,8 @@ class TeslaCommandExecutor:
         auth_url: str = settings.fleet_auth_url,
         client_id: str = settings.fleet_client_id,
         client_secret: str = settings.fleet_client_secret,
+        proxy_verify_ssl: bool = settings.fleet_proxy_verify_ssl,
+        proxy_ca_cert: str | None = settings.fleet_proxy_ca_cert,
     ) -> None:
         self.vin = vin
         self.proxy_url = proxy_url.rstrip("/")
@@ -105,48 +108,80 @@ class TeslaCommandExecutor:
         self.auth_url = auth_url
         self.client_id = client_id
         self.client_secret = client_secret
+        self.proxy_verify_ssl: bool | str = proxy_ca_cert if proxy_ca_cert else proxy_verify_ssl
+        self._token_lock = asyncio.Lock()
+        self._cached_token: tuple[str, int] | None = None
 
-    async def _get_access_token(self, client: httpx.AsyncClient) -> str | None:
+    def _read_token_file(self) -> dict[str, Any] | None:
         if not os.path.exists(self.token_file):
             return None
-        try:
-            with open(self.token_file) as f:
-                data = json.load(f)
-        except Exception as exc:
-            logger.warning("Failed reading token file %s: %s", self.token_file, exc)
-            return None
+        with open(self.token_file) as f:
+            raw = json.load(f)
+        return raw if isinstance(raw, dict) else None
 
-        now = int(time.time())
-        exp = int(data.get("expires_at") or 0)
-        access_token = data.get("access_token")
-        refresh_token = data.get("refresh_token")
+    def _write_token_file(self, token_data: dict[str, Any]) -> None:
+        tmp = f"{self.token_file}.tmp"
+        with open(tmp, "w") as f:
+            json.dump(token_data, f, indent=2)
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, self.token_file)
 
-        if access_token and exp > now + 900:
-            return str(access_token)
+    async def _get_access_token(self) -> str | None:
+        async with self._token_lock:
+            now = int(time.time())
+            if self._cached_token is not None:
+                tok, exp = self._cached_token
+                if tok and exp > now + 900:
+                    return tok
 
-        if refresh_token and self.client_id:
-            form: dict[str, str] = {
-                "grant_type": "refresh_token",
-                "client_id": self.client_id,
-                "refresh_token": str(refresh_token),
-            }
-            if self.client_secret:
-                form["client_secret"] = self.client_secret
             try:
-                resp = await client.post(self.auth_url, data=form, timeout=15.0)
-                if resp.status_code == 200:
-                    new_tok = resp.json()
-                    new_tok["expires_at"] = now + int(new_tok.get("expires_in", 28800))
-                    new_tok["updated_at"] = now
-                    tmp = f"{self.token_file}.tmp"
-                    with open(tmp, "w") as f:
-                        json.dump(new_tok, f, indent=2)
-                    os.replace(tmp, self.token_file)
-                    return str(new_tok["access_token"])
+                data = await asyncio.to_thread(self._read_token_file)
             except Exception as exc:
-                logger.warning("OAuth token refresh failed: %s", exc)
+                logger.warning("Failed reading token file %s: %s", self.token_file, exc)
+                data = None
 
-        return str(access_token) if access_token else None
+            if not data:
+                return self._cached_token[0] if self._cached_token else None
+
+            exp = int(data.get("expires_at") or 0)
+            access_token = data.get("access_token")
+            refresh_token = data.get("refresh_token")
+
+            if access_token and exp > now + 900:
+                self._cached_token = (str(access_token), exp)
+                return str(access_token)
+
+            if refresh_token and self.client_id:
+                form: dict[str, str] = {
+                    "grant_type": "refresh_token",
+                    "client_id": self.client_id,
+                    "refresh_token": str(refresh_token),
+                }
+                if self.client_secret:
+                    form["client_secret"] = self.client_secret
+                try:
+                    async with httpx.AsyncClient(verify=True, timeout=15.0) as auth_client:
+                        resp = await auth_client.post(self.auth_url, data=form)
+                    if resp.status_code == 200:
+                        new_tok = resp.json()
+                        new_access = new_tok.get("access_token")
+                        if new_access:
+                            new_exp = now + int(new_tok.get("expires_in", 28800))
+                            new_tok["expires_at"] = new_exp
+                            new_tok["updated_at"] = now
+                            self._cached_token = (str(new_access), new_exp)
+                            try:
+                                await asyncio.to_thread(self._write_token_file, new_tok)
+                            except Exception as write_exc:
+                                logger.warning(
+                                    "OAuth token refreshed in memory but persistence failed: %s",
+                                    write_exc,
+                                )
+                            return str(new_access)
+                except Exception as exc:
+                    logger.warning("OAuth token refresh failed: %s", exc)
+
+            return str(access_token) if access_token else None
 
     async def execute(
         self,
@@ -165,12 +200,12 @@ class TeslaCommandExecutor:
         url = f"{self.proxy_url}/api/1/vehicles/{self.vin}/{endpoint}"
 
         try:
-            async with httpx.AsyncClient(verify=False, timeout=20.0) as client:
-                token = await self._get_access_token(client)
-                if not token:
-                    return CommandResult(
-                        ok=False, action=action, message="Missing or invalid Fleet API token"
-                    )
+            token = await self._get_access_token()
+            if not token:
+                return CommandResult(
+                    ok=False, action=action, message="Missing or invalid Fleet API token"
+                )
+            async with httpx.AsyncClient(verify=self.proxy_verify_ssl, timeout=20.0) as client:
                 resp = await client.post(
                     url,
                     json=payload,
@@ -187,9 +222,24 @@ class TeslaCommandExecutor:
                 ok=False, action=action, message=err_msg, http_status=resp.status_code
             )
 
-        body = resp.json().get("response", {})
+        try:
+            raw_json = resp.json()
+        except Exception:
+            return CommandResult(
+                ok=False,
+                action=action,
+                message="Unexpected non-JSON response from proxy",
+                http_status=resp.status_code,
+            )
+
+        body = raw_json.get("response") if isinstance(raw_json, dict) else None
         if isinstance(body, dict) and "result" in body:
             ok = bool(body.get("result"))
             reason = str(body.get("reason") or ("OK" if ok else "Rejected"))
             return CommandResult(ok=ok, action=action, message=reason, http_status=resp.status_code)
-        return CommandResult(ok=True, action=action, message="OK", http_status=resp.status_code)
+        return CommandResult(
+            ok=False,
+            action=action,
+            message="Unexpected proxy response format",
+            http_status=resp.status_code,
+        )

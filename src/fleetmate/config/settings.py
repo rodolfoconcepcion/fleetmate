@@ -106,6 +106,18 @@ class Settings(BaseSettings):
     )
     fleet_client_id: str = Field(default="", description="Tesla Fleet API OAuth Client ID")
     fleet_client_secret: str = Field(default="", description="Tesla Fleet API OAuth Client Secret")
+    fleet_proxy_verify_ssl: bool = Field(
+        default=True,
+        description="Verify TLS certificates when calling the Tesla Vehicle Command HTTP proxy",
+    )
+    fleet_proxy_ca_cert: str | None = Field(
+        default=None,
+        description="Optional CA certificate path for the Tesla Vehicle Command HTTP proxy",
+    )
+    web_api_token: str | None = Field(
+        default=None,
+        description="Optional Bearer token protecting mutating Web Portal API endpoints",
+    )
 
 
 settings = Settings()

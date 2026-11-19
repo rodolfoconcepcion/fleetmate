@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 from typing import Any
 
@@ -62,9 +61,8 @@ class FleetMQTTConsumer:
         for task in tasks:
             if not task.done():
                 task.cancel()
-        for task in tasks:
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     def _cancel_sleep_task(self, vin: str) -> None:
         task = self._sleep_tasks.pop(vin, None)
@@ -232,9 +230,11 @@ class FleetMQTTConsumer:
         # Handle per-field MQTT topics emitted by tesla/fleet-telemetry: .../v/<FieldName>
         if len(parts) >= 3 and parts[-2].lower() == "v":
             field_name = parts[-1]
-            if field_name in IGNORED_FIELDS or parsed is None:
+            if field_name in IGNORED_FIELDS:
                 return
-            if isinstance(parsed, str) and parsed == "<invalid>":
+            if parsed is None or (isinstance(parsed, str) and parsed == "<invalid>"):
+                if vin in self._latest_fields:
+                    self._latest_fields[vin].pop(field_name, None)
                 return
             if (
                 field_name in DISTANCE_FIELDS
@@ -255,7 +255,12 @@ class FleetMQTTConsumer:
             return
 
         if isinstance(parsed, dict):
-            await self._process_raw_payload(vin, parsed)
+            normalized = dict(parsed)
+            for field_name in DISTANCE_FIELDS:
+                val = normalized.get(field_name)
+                if isinstance(val, (int, float)) and not isinstance(val, bool):
+                    normalized[field_name] = float(val) * MILES_TO_KM
+            await self._process_raw_payload(vin, normalized)
 
     async def _dispatch_command(self, subtopic: str, raw_payload: str) -> None:
         """Translate an incoming HA MQTT control payload into a Tesla Fleet API command."""
@@ -296,7 +301,13 @@ class FleetMQTTConsumer:
 
         if subtopic in toggle_map:
             on_act, off_act, state_key = toggle_map[subtopic]
-            is_on = upper in {"ON", "LOCK", "TRUE", "1"}
+            if upper in {"ON", "LOCK", "TRUE", "1"}:
+                is_on = True
+            elif upper in {"OFF", "UNLOCK", "FALSE", "0"}:
+                is_on = False
+            else:
+                logger.warning("Unrecognized toggle payload for %s: %r", subtopic, raw_payload)
+                return
             action = on_act if is_on else off_act
             if state_key:
                 state_update = (state_key, "true" if is_on else "false")

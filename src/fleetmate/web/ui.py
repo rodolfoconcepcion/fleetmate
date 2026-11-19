@@ -530,7 +530,7 @@ PORTAL_HTML = """<!DOCTYPE html>
           <td>${g.radius} m</td>
           <td>${rate}</td>
           <td class="btn-row">
-            <button onclick='editGeofence(${JSON.stringify(g)})'>Edit</button>
+            <button onclick="editGeofenceById(${Number(g.id)})">Edit</button>
             <button class="danger" onclick="deleteGeofence(${g.id})">Del</button>
           </td>
         </tr>`;
@@ -547,6 +547,11 @@ PORTAL_HTML = """<!DOCTYPE html>
       if (!pos || pos.latitude == null) return toast('No GPS coordinates available');
       document.getElementById('gfLat').value = Number(pos.latitude).toFixed(6);
       document.getElementById('gfLon').value = Number(pos.longitude).toFixed(6);
+    }
+
+    function editGeofenceById(id) {
+      const g = state.geofences.find(x => x.id === id);
+      if (g) editGeofence(g);
     }
 
     function editGeofence(g) {

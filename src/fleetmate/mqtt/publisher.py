@@ -18,7 +18,8 @@ class MQTTPublishClient(Protocol):
         payload: str | bytes | None = None,
         qos: int = 0,
         retain: bool = False,
-    ) -> Any: ...
+    ) -> Any:
+        """Publish an MQTT message to the broker."""
 
 
 def _fmt_bool(val: bool) -> str:
