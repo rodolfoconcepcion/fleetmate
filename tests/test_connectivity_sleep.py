@@ -34,7 +34,8 @@ async def test_connectivity_disconnect_marks_asleep_after_debounce():
     assert engine.current_state == VehicleState.ONLINE
 
     await consumer._handle_connectivity(vin, {"NetworkInterface": "wifi", "Status": "DISCONNECTED"})
-    await asyncio.sleep(0.06)
+    task = consumer._sleep_tasks[vin]
+    await task
 
     assert engine.current_state == VehicleState.ASLEEP
     publisher.publish_state_only.assert_awaited()
@@ -43,13 +44,16 @@ async def test_connectivity_disconnect_marks_asleep_after_debounce():
 
 @pytest.mark.asyncio
 async def test_connectivity_handoff_cancels_sleep():
-    engine, publisher, consumer = _make_engine_and_consumer(sleep_debounce=0.05)
+    engine, publisher, consumer = _make_engine_and_consumer(sleep_debounce=0.5)
     vin = "5YJ3E1EBXRF822141"
 
     await consumer._handle_connectivity(vin, {"NetworkInterface": "wifi", "Status": "DISCONNECTED"})
+    task = consumer._sleep_tasks[vin]
     await consumer._handle_connectivity(vin, {"NetworkInterface": "cellular", "Status": "CONNECTED"})
-    await asyncio.sleep(0.08)
+    await asyncio.gather(task, return_exceptions=True)
 
+    assert vin not in consumer._sleep_tasks
+    assert task.cancelled()
     assert engine.current_state == VehicleState.ONLINE
     publisher.publish_state_only.assert_not_called()
 

@@ -55,9 +55,14 @@ class FleetMQTTConsumer:
         self._command_tasks: set[asyncio.Task[None]] = set()
 
     async def _cancel_flush_tasks(self) -> None:
-        tasks = list(self._flush_tasks.values()) + list(self._sleep_tasks.values())
+        tasks = (
+            list(self._flush_tasks.values())
+            + list(self._sleep_tasks.values())
+            + list(self._command_tasks)
+        )
         self._flush_tasks.clear()
         self._sleep_tasks.clear()
+        self._command_tasks.clear()
         for task in tasks:
             if not task.done():
                 task.cancel()

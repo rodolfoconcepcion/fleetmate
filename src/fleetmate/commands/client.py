@@ -201,7 +201,12 @@ class TeslaCommandExecutor:
             return CommandResult(ok=False, action=action, message="Vehicle VIN not configured")
 
         endpoint, build_payload = spec
-        payload = build_payload(value, coords)
+        try:
+            payload = build_payload(value, coords)
+        except (TypeError, ValueError) as exc:
+            return CommandResult(
+                ok=False, action=action, message=f"Invalid command value for {action}: {exc}"
+            )
         url = f"{self.proxy_url}/api/1/vehicles/{self.vin}/{endpoint}"
 
         try:
@@ -238,6 +243,13 @@ class TeslaCommandExecutor:
             )
 
         body = raw_json.get("response") if isinstance(raw_json, dict) else None
+        if action == "wake" and isinstance(body, dict) and "state" in body:
+            return CommandResult(
+                ok=True,
+                action=action,
+                message=str(body.get("state") or "OK"),
+                http_status=resp.status_code,
+            )
         if isinstance(body, dict) and "result" in body:
             ok = bool(body.get("result"))
             reason = str(body.get("reason") or ("OK" if ok else "Rejected"))

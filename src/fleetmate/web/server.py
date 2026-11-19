@@ -137,6 +137,8 @@ class FleetMateWebServer:
                 k, v = decoded.split(":", 1)
                 headers[k.strip().lower()] = v.strip()
 
+        if "chunked" in headers.get("transfer-encoding", "").lower():
+            raise ValueError("Chunked transfer encoding is not supported")
         content_length = int(headers.get("content-length", "0") or "0")
         if content_length < 0 or content_length > MAX_BODY_BYTES:
             raise ValueError("Invalid Content-Length")

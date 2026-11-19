@@ -784,7 +784,7 @@ class FleetMateRepository:
                    d.speed_max, d.power_max, d.start_km, d.end_km,
                    d.outside_temp_avg, d.inside_temp_avg,
                    COALESCE(sg.name, sa.name, sa.display_name, 'Unknown') AS start_location,
-                   COALESCE(eg.name, ea.name, ea.display_name, 'In Progress') AS end_location,
+                   COALESCE(eg.name, ea.name, ea.display_name, CASE WHEN d.end_date IS NULL THEN 'In Progress' ELSE 'Unknown' END) AS end_location,
                    sp.latitude AS start_lat, sp.longitude AS start_lon,
                    ep.latitude AS end_lat, ep.longitude AS end_lon
             FROM public.drives d

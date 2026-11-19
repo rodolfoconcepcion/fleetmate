@@ -578,7 +578,7 @@ def build_ha_discovery_payload(
             "charging_state",
             "charging",
             icon="mdi:ev-station",
-            value_template="{{ 'true' if value == 'Charging' else 'false' }}",
+            value_template="{{ 'true' if value in ['Charging', 'Starting', 'DetailedChargeStateCharging', 'DetailedChargeStateStarting'] else 'false' }}",
         ),
         "climate_control": switch(
             "climate_control",
