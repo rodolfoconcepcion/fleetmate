@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -136,4 +138,90 @@ async def test_mqtt_consumer_dispatches_ha_commands() -> None:
 
     await consumer._dispatch_command("windows_vent", "PRESS")
     executor.execute.assert_awaited_with("windows_vent", value=None, coords=(25.76, -80.19))
+
+
+@pytest.mark.asyncio
+async def test_execute_invalid_numeric_value_and_wake_response(tmp_path: Path) -> None:
+    import httpx
+
+    tok_file = tmp_path / "token.json"
+    tok_file.write_text('{"access_token": "tok123", "expires_at": 9999999999}')
+    executor = TeslaCommandExecutor(
+        vin="5YJ3E1EBXRF822141",
+        proxy_url="https://proxy.example.invalid",
+        token_file=str(tok_file),
+    )
+
+    mock_client = MagicMock()
+    mock_client.post = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch.object(httpx, "AsyncClient", return_value=mock_client):
+        res_bad = await executor.execute("charge_limit", value=None)
+        assert res_bad.ok is False
+        mock_client.post.assert_not_called()
+
+        wake_resp = MagicMock()
+        wake_resp.status_code = 200
+        wake_resp.json.return_value = {"response": {"state": "online"}}
+        mock_client.post = AsyncMock(return_value=wake_resp)
+
+        res_wake = await executor.execute("wake")
+        assert res_wake.ok is True
+        assert res_wake.message == "online"
+
+        res_non_wake = await executor.execute("flash_lights")
+        assert res_non_wake.ok is False
+
+
+@pytest.mark.asyncio
+async def test_cancel_flush_tasks_clears_command_tasks() -> None:
+    import asyncio
+
+    engine = MagicMock()
+    engine.publisher = None
+    engine.last_coords = None
+    started = asyncio.Event()
+
+    async def _blocking_execute(*_args: Any, **_kwargs: Any) -> CommandResult:
+        started.set()
+        await asyncio.sleep(10)
+        return CommandResult(ok=True, action="wake", message="OK")
+
+    executor = MagicMock()
+    executor.execute = AsyncMock(side_effect=_blocking_execute)
+
+    consumer = FleetMQTTConsumer(engine=engine, publisher=None, command_executor=executor)
+    msg = MagicMock()
+    msg.topic = f"{consumer._cmd_prefix}wake"
+    msg.payload = b"PRESS"
+
+    await consumer._handle_message(msg)
+    await started.wait()
+    assert len(consumer._command_tasks) == 1
+    task = next(iter(consumer._command_tasks))
+
+    await consumer._cancel_flush_tasks()
+    assert len(consumer._command_tasks) == 0
+    assert task.cancelled()
+
+
+def test_charging_control_value_template_matches_active_states() -> None:
+    payload = build_ha_discovery_payload(
+        car_id=1,
+        prefix="fleetmate",
+        vehicle_name="Wilfrido",
+        vehicle_model="Model 3",
+        public_url="https://fleetmate.example.invalid/",
+    )
+    tpl = payload["components"]["charging_control"]["value_template"]
+    for active in (
+        "Charging",
+        "Starting",
+        "DetailedChargeStateCharging",
+        "DetailedChargeStateStarting",
+    ):
+        assert active in tpl
+    assert "Stopped" not in tpl
 
