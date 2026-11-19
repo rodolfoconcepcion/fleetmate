@@ -602,7 +602,7 @@ class FleetMateRepository:
                       cost_per_unit, session_fee, billing_type::text AS billing_type,
                       inserted_at, updated_at;
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire(timeout=10.0) as conn:
             row = await conn.fetchrow(
                 query,
                 name.strip(),
@@ -612,6 +612,7 @@ class FleetMateRepository:
                 Decimal(str(cost_per_unit)) if cost_per_unit is not None else None,
                 Decimal(str(session_fee)) if session_fee is not None else None,
                 bt,
+                timeout=10.0,
             )
         if row is None:
             raise RuntimeError("Failed to create geofence")
@@ -638,8 +639,8 @@ class FleetMateRepository:
                 latitude = COALESCE($3, latitude),
                 longitude = COALESCE($4, longitude),
                 radius = COALESCE($5, radius),
-                cost_per_unit = $6,
-                session_fee = $7,
+                cost_per_unit = COALESCE($6, cost_per_unit),
+                session_fee = COALESCE($7, session_fee),
                 billing_type = COALESCE($8::billing_type, billing_type),
                 updated_at = NOW() AT TIME ZONE 'UTC'
             WHERE id = $1
@@ -647,7 +648,7 @@ class FleetMateRepository:
                       cost_per_unit, session_fee, billing_type::text AS billing_type,
                       inserted_at, updated_at;
         """
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire(timeout=10.0) as conn:
             row = await conn.fetchrow(
                 query,
                 geofence_id,
@@ -658,6 +659,7 @@ class FleetMateRepository:
                 Decimal(str(cost_per_unit)) if cost_per_unit is not None else None,
                 Decimal(str(session_fee)) if session_fee is not None else None,
                 bt,
+                timeout=10.0,
             )
         return self._serialize_row(row) if row else None
 

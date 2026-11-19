@@ -518,7 +518,7 @@ PORTAL_HTML = """<!DOCTYPE html>
 
     function centerOnCar() {
       const pos = state.snapshot && state.snapshot.position;
-      if (pos && pos.latitude != null) map.setView([pos.latitude, pos.longitude], 15);
+      if (map && pos && pos.latitude != null) map.setView([pos.latitude, pos.longitude], 15);
     }
 
     function renderGeofences() {
@@ -539,7 +539,7 @@ PORTAL_HTML = """<!DOCTYPE html>
 
     function focusMap(lat, lon) {
       switchTab('geoloc', document.querySelector('.tab-btn'));
-      map.setView([lat, lon], 16);
+      if (map) map.setView([lat, lon], 16);
     }
 
     function useCarCoords() {
@@ -683,7 +683,11 @@ PORTAL_HTML = """<!DOCTYPE html>
       }
     }
 
-    initMap();
+    try {
+      initMap();
+    } catch (err) {
+      console.warn('Map initialization skipped:', err);
+    }
     refreshAll();
     setInterval(refreshAll, 30000);
   </script>

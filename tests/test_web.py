@@ -111,3 +111,13 @@ async def test_web_validation_and_command_execution() -> None:
     executor.execute.assert_awaited_once_with(
         "flash_lights", value=None, coords=(25.76, -80.19)
     )
+
+
+def test_web_bearer_auth_check() -> None:
+    server, _, _ = _make_server()
+    assert server._is_authorized({}) is True
+
+    server.config = server.config.model_copy(update={"web_api_token": "secret-token"})
+    assert server._is_authorized({}) is False
+    assert server._is_authorized({"authorization": "Bearer wrong"}) is False
+    assert server._is_authorized({"authorization": "Bearer secret-token"}) is True

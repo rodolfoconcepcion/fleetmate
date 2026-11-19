@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hmac
 import logging
 import re
 from http import HTTPStatus
@@ -40,6 +41,18 @@ class FleetMateWebServer:
         self.command_executor = command_executor
         self.config = config or default_settings
         self._server: asyncio.AbstractServer | None = None
+        self._active_writers: set[asyncio.StreamWriter] = set()
+        self._client_tasks: set[asyncio.Task[None]] = set()
+
+    def _is_authorized(self, headers: dict[str, str]) -> bool:
+        expected = self.config.web_api_token
+        if not expected:
+            return True
+        auth_hdr = headers.get("authorization", "")
+        if not auth_hdr.startswith("Bearer "):
+            return False
+        provided = auth_hdr[len("Bearer ") :].strip()
+        return hmac.compare_digest(provided, expected)
 
     async def start(self) -> None:
         """Start listening on configured host and port."""
@@ -50,21 +63,37 @@ class FleetMateWebServer:
         logger.info("FleetMate Web Portal listening on %s", addrs or self.config.port)
 
     async def stop(self) -> None:
-        """Stop accepting new connections and close server cleanly."""
+        """Stop accepting new connections, cancel active handlers, and close server."""
         if self._server is not None:
             self._server.close()
-            await self._server.wait_closed()
+            for writer in list(self._active_writers):
+                with contextlib.suppress(Exception):
+                    writer.close()
+            for task in list(self._client_tasks):
+                if not task.done():
+                    task.cancel()
+            if self._client_tasks:
+                await asyncio.gather(*self._client_tasks, return_exceptions=True)
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(self._server.wait_closed(), timeout=5.0)
             self._server = None
             logger.info("FleetMate Web Portal stopped.")
 
     async def _handle_client(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
+        task = asyncio.current_task()
+        if task is not None:
+            self._client_tasks.add(task)
+        self._active_writers.add(writer)
         try:
-            method, target, body = await self._read_http_request(reader)
+            method, target, headers, body = await self._read_http_request(reader)
             if method is None:
                 return
-            status, ctype, payload = await self.dispatch(method, target, body)
+            if method in {"POST", "PUT", "DELETE"} and not self._is_authorized(headers):
+                status, ctype, payload = self._json_response(401, {"error": "Unauthorized"})
+            else:
+                status, ctype, payload = await self.dispatch(method, target, body)
             await self._write_http_response(writer, status, ctype, payload)
         except TimeoutError:
             with contextlib.suppress(Exception):
@@ -77,6 +106,9 @@ class FleetMateWebServer:
             with contextlib.suppress(Exception):
                 await self._write_json(writer, 500, {"error": "Internal server error"})
         finally:
+            self._active_writers.discard(writer)
+            if task is not None:
+                self._client_tasks.discard(task)
             writer.close()
             with contextlib.suppress(Exception):
                 await writer.wait_closed()
@@ -84,10 +116,10 @@ class FleetMateWebServer:
     @staticmethod
     async def _read_http_request(
         reader: asyncio.StreamReader,
-    ) -> tuple[str | None, str, bytes]:
+    ) -> tuple[str | None, str, dict[str, str], bytes]:
         request_line_raw = await asyncio.wait_for(reader.readline(), timeout=15.0)
         if not request_line_raw:
-            return None, "", b""
+            return None, "", {}, b""
         request_line = request_line_raw.decode("latin-1").strip()
         parts = request_line.split(" ", 2)
         if len(parts) < 2:
@@ -113,7 +145,7 @@ class FleetMateWebServer:
             if content_length > 0
             else b""
         )
-        return method, target, body
+        return method, target, headers, body
 
     @staticmethod
     async def _write_http_response(
