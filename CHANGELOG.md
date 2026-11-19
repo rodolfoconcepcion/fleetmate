@@ -4,6 +4,13 @@
 
 ---
 
+## [0.6.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.5.0...fleetmate-v0.6.0) (2026-11-19)
+
+
+### Features
+
+* **bridge:** HA MQTT discovery & commands, GeoLoc portal, and zero-cost connectivity sleep detection ([#24](https://github.com/rodolfoconcepcion/fleetmate/issues/24)) ([5843495](https://github.com/rodolfoconcepcion/fleetmate/commit/5843495da50552459666acd6a452636a5d1504c5))
+
 ## [0.5.0](https://github.com/rodolfoconcepcion/fleetmate/compare/fleetmate-v0.4.0...fleetmate-v0.5.0) (2026-11-09)
 
 
