@@ -1,5 +1,5 @@
 # Multi-stage minimal & secure production Dockerfile
-FROM python:3.12-alpine AS builder
+FROM python:3.15-alpine AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     python -m build --wheel
 
 # Final Stage: Distroless/Minimal Alpine Runner
-FROM python:3.12-alpine AS runner
+FROM python:3.15-alpine AS runner
 
 WORKDIR /app
 
